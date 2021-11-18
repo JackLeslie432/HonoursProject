@@ -30,10 +30,10 @@ Renderer::~Renderer()
 		swapChain = 0;
 	}
 	
-	if (factory)
+	if (pFactory)
 	{
-		factory->Release();
-		factory = 0;
+		pFactory->Release();
+		pFactory = 0;
 	}
 
 	if (renderTargetView)
@@ -159,6 +159,8 @@ void Renderer::CreateSwapchain()
 {
 	HRESULT hr = S_OK;
 
+	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)(&pFactory));
+
 	DXGI_SWAP_CHAIN_DESC swapChainDesc;
 
 	// Initialise the swap chain description.
@@ -179,7 +181,7 @@ void Renderer::CreateSwapchain()
 	swapChainDesc.Flags = 0;
 
 	// swap chain
-	hr = factory->CreateSwapChain(device, &swapChainDesc, &swapChain);
+	hr = pFactory->CreateSwapChain(device, &swapChainDesc, &swapChain);
 
 }
 
@@ -207,6 +209,25 @@ void Renderer::CreateDepthStencil()
 	device->CreateDepthStencilState(&depthDesc, &depthStencilState);
 	deviceContext->OMSetDepthStencilState(depthStencilState, 1);
 
+	// Depth stencil
+	D3D11_TEXTURE2D_DESC depthBufferDesc;
+	// Initialize the description of the depth buffer.
+	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
+	depthBufferDesc.Width = 1200;
+	depthBufferDesc.Height = 675;
+	depthBufferDesc.MipLevels = 1;
+	depthBufferDesc.ArraySize = 1;
+	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthBufferDesc.SampleDesc.Count = 1;
+	depthBufferDesc.SampleDesc.Quality = 0;
+	depthBufferDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthBufferDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	depthBufferDesc.CPUAccessFlags = 0;
+	depthBufferDesc.MiscFlags = 0;
+
+	// Create the texture for the depth buffer using the filled out description.
+	device->CreateTexture2D(&depthBufferDesc, NULL, &depthStencil);
+
 	D3D11_DEPTH_STENCIL_VIEW_DESC viewDesc;
 
 	ZeroMemory(&viewDesc, sizeof(viewDesc));
@@ -214,6 +235,6 @@ void Renderer::CreateDepthStencil()
 	viewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	viewDesc.Texture2D.MipSlice = 0;
 
-	device->CreateDepthStencilView(depthStencil, &viewDesc, &depthStencilView);
+	HRESULT hr = device->CreateDepthStencilView(depthStencil, &viewDesc, &depthStencilView);
 	deviceContext->OMSetRenderTargets(1, &renderTargetView, depthStencilView);
 }

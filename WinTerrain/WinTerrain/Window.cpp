@@ -43,13 +43,14 @@ int Window::StartWindow(int screenWidth, int screenHeight)
 
 	// Run the message loop.
 
-	MSG msg = { };
+	/*MSG msg = { };
 	while (GetMessage(&msg, NULL, 0, 0))
 	{
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
-	}
+	}*/
 
+	wnd = hwnd;
 	return 0;
 }
 

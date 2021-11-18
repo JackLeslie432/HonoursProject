@@ -7,6 +7,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <vector>
+#include <dxgi.h>
 #include <string>
 
 using namespace DirectX;
@@ -43,7 +44,7 @@ private:
 
 	IDXGISwapChain* swapChain;
 	HWND* wnd;
-	IDXGIFactory1* factory;
+	IDXGIFactory1* pFactory;
 
 	ID3D11RenderTargetView* renderTargetView;
 	ID3D11DepthStencilView* depthStencilView;
