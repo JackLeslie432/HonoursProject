@@ -8,6 +8,11 @@ Renderer::Renderer(HWND hwnd)
 	CreateSwapchain();
 	CreateRenderTargetView();
 	CreateDepthStencil();
+
+	worldMatrix = DirectX::XMMatrixIdentity();
+
+	projectionMatrix = XMMatrixPerspectiveFovLH(90, 1200/675, 1, 100);
+
 }
 
 Renderer::~Renderer()
@@ -90,6 +95,9 @@ void Renderer::beginScene(float red, float green, float blue, float alpha)
 	deviceContext->ClearRenderTargetView(renderTargetView, color);
 	deviceContext->ClearDepthStencilView(depthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
+	SetBackBufferRenderTarget();
+	resetViewport();
+
 	return;
 }
 
@@ -107,11 +115,12 @@ void Renderer::SetBackBufferRenderTarget()
 	return;
 }
 
-// Your initialise will create a local viewport variable, and you can swap it to this one
 void Renderer::resetViewport()
 {
+	D3D11_VIEWPORT viewport = { 0.0f, 0.0f, 1200, 675, 0.0f, 1.0f };
+
 	deviceContext->RSSetViewports(1, &viewport);
-	return;
+	return;	
 }
 
 void Renderer::CreateRenderTargetView()
@@ -149,10 +158,7 @@ void Renderer::CreateDeviceResources()
         &device, NULL, &deviceContext	// Returns                 
     );
 
-    if (FAILED(hr))
-	{ }
-
-    //return hr;
+	assert(SUCCEEDED(hr));
 }
 
 void Renderer::CreateSwapchain()

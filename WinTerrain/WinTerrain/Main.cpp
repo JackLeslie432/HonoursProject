@@ -8,6 +8,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	wnd->Run();
 
+	delete app;
+	app = NULL;
+
+	delete wnd;
+	wnd = NULL;
+
 	return 0;
 }
 

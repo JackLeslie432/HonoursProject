@@ -5,12 +5,14 @@
 #include <DirectXMath.h>
 
 #include "App.h"
+#include "Input.h"
+#include "Timer.h"
 
 class Window
 {
 public:
 	Window(App*, HINSTANCE,int,int);
-	~Window() {};
+	~Window();
 
 	void Run();
 
@@ -22,9 +24,9 @@ private:
 	HWND wnd;
 
 	HINSTANCE hInstance;
+	Input input;	
 
-
-	bool Frame();
-
+	core::Timer timer;
 };
 
+static Window* _Application_Handle = nullptr;

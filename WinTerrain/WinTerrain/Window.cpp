@@ -7,7 +7,15 @@ Window::Window(App* in_app, HINSTANCE in_hInstance, int screenWidth, int screenH
 
 	StartWindow(screenWidth, screenHeight);
 
-	app->Init(wnd);
+	app->Init(wnd, &input);
+
+	_Application_Handle = this;
+}
+
+Window::~Window()
+{
+	_Application_Handle = NULL;
+
 }
 
 int Window::StartWindow(int screenWidth, int screenHeight)
@@ -71,6 +79,42 @@ LRESULT Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		EndPaint(hwnd, &ps);
 	}
+	case WM_KEYDOWN:
+	{
+		_Application_Handle->input.SetKeyDown(wParam);
+		break;
+	}
+	case WM_KEYUP:
+	{
+		_Application_Handle->input.SetKeyUp(wParam);
+		break;
+	} 
+	case WM_MOUSEMOVE:
+	{
+		_Application_Handle->input.setMouseX(LOWORD(lParam));
+		_Application_Handle->input.setMouseY(HIWORD(lParam));
+		break;
+	}
+	case WM_LBUTTONDOWN:
+	{
+		_Application_Handle->input.setLeftMouse(true);
+		break;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		_Application_Handle->input.setRightMouse(true);
+		break;
+	}
+	case WM_LBUTTONUP:
+	{
+		_Application_Handle->input.setLeftMouse(false);
+		break;
+	}
+	case WM_RBUTTONUP:
+	{
+		_Application_Handle->input.setRightMouse(false);
+		break;
+	}
 		return 0;
 	}
 
@@ -99,8 +143,10 @@ void Window::Run()
 		}
 		else
 		{
+			float dt;
+			timer.frame();
 			// Update the scene.
-			app->Frame();
+			app->Frame(timer.getTime());
 
 			// Render frames during idle time (when no messages are waiting).
 			//renderer->Render();
@@ -110,9 +156,4 @@ void Window::Run()
 		}
 	}
 
-}
-
-bool Window::Frame()
-{
-	return app->Frame();	
 }
