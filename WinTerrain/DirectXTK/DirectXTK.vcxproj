@@ -21,19 +21,19 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{d297aaea-49b7-47ef-a5ca-4b4adc5d5c3f}</ProjectGuid>
-    <RootNamespace>WinTerrain</RootNamespace>
+    <ProjectGuid>{bf78da19-9966-47f9-a938-850d2ed03e06}</ProjectGuid>
+    <RootNamespace>DirectXTK</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -86,15 +86,12 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(solutiondir)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -103,28 +100,25 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(solutiondir)\include;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -134,54 +128,82 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="App.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="FPCamera.cpp" />
-    <ClCompile Include="Input.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Renderer.cpp" />
-    <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="TerrainPlane.cpp" />
-    <ClCompile Include="TextureManager.cpp" />
-    <ClCompile Include="Timer.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClInclude Include="..\include\DirectXTK\AlignedNew.h" />
+    <ClInclude Include="..\include\DirectXTK\Audio.h" />
+    <ClInclude Include="..\include\DirectXTK\Bezier.h" />
+    <ClInclude Include="..\include\DirectXTK\BinaryReader.h" />
+    <ClInclude Include="..\include\DirectXTK\BufferHelpers.h" />
+    <ClInclude Include="..\include\DirectXTK\CommonStates.h" />
+    <ClInclude Include="..\include\DirectXTK\DDS.h" />
+    <ClInclude Include="..\include\DirectXTK\DDSTextureLoader.h" />
+    <ClInclude Include="..\include\DirectXTK\DemandCreate.h" />
+    <ClInclude Include="..\include\DirectXTK\DirectXHelpers.h" />
+    <ClInclude Include="..\include\DirectXTK\EffectCommon.h" />
+    <ClInclude Include="..\include\DirectXTK\Effects.h" />
+    <ClInclude Include="..\include\DirectXTK\GamePad.h" />
+    <ClInclude Include="..\include\DirectXTK\GeometricPrimitive.h" />
+    <ClInclude Include="..\include\DirectXTK\Geometry.h" />
+    <ClInclude Include="..\include\DirectXTK\GraphicsMemory.h" />
+    <ClInclude Include="..\include\DirectXTK\Keyboard.h" />
+    <ClInclude Include="..\include\DirectXTK\LoaderHelpers.h" />
+    <ClInclude Include="..\include\DirectXTK\Model.h" />
+    <ClInclude Include="..\include\DirectXTK\Mouse.h" />
+    <ClInclude Include="..\include\DirectXTK\pch.h" />
+    <ClInclude Include="..\include\DirectXTK\PlatformHelpers.h" />
+    <ClInclude Include="..\include\DirectXTK\PostProcess.h" />
+    <ClInclude Include="..\include\DirectXTK\PrimitiveBatch.h" />
+    <ClInclude Include="..\include\DirectXTK\ScreenGrab.h" />
+    <ClInclude Include="..\include\DirectXTK\SDKMesh.h" />
+    <ClInclude Include="..\include\DirectXTK\SharedResourcePool.h" />
+    <ClInclude Include="..\include\DirectXTK\SimpleMath.h" />
+    <ClInclude Include="..\include\DirectXTK\SpriteBatch.h" />
+    <ClInclude Include="..\include\DirectXTK\SpriteFont.h" />
+    <ClInclude Include="..\include\DirectXTK\vbo.h" />
+    <ClInclude Include="..\include\DirectXTK\VertexTypes.h" />
+    <ClInclude Include="..\include\DirectXTK\WICTextureLoader.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="FPCamera.h" />
-    <ClInclude Include="Input.h" />
-    <ClInclude Include="Renderer.h" />
-    <ClInclude Include="Shader.h" />
-    <ClInclude Include="TerrainPlane.h" />
-    <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="Timer.h" />
-    <ClInclude Include="Window.h" />
+    <ClCompile Include="..\include\DirectXTK\BinaryReader.cpp" />
+    <ClCompile Include="..\include\DirectXTK\BufferHelpers.cpp" />
+    <ClCompile Include="..\include\DirectXTK\CommonStates.cpp" />
+    <ClCompile Include="..\include\DirectXTK\DDSTextureLoader.cpp" />
+    <ClCompile Include="..\include\DirectXTK\DGSLEffectFactory.cpp" />
+    <ClCompile Include="..\include\DirectXTK\DirectXHelpers.cpp" />
+    <ClCompile Include="..\include\DirectXTK\EffectCommon.cpp" />
+    <ClCompile Include="..\include\DirectXTK\EffectFactory.cpp" />
+    <ClCompile Include="..\include\DirectXTK\GamePad.cpp" />
+    <ClCompile Include="..\include\DirectXTK\GeometricPrimitive.cpp" />
+    <ClCompile Include="..\include\DirectXTK\Geometry.cpp" />
+    <ClCompile Include="..\include\DirectXTK\GraphicsMemory.cpp" />
+    <ClCompile Include="..\include\DirectXTK\Keyboard.cpp" />
+    <ClCompile Include="..\include\DirectXTK\Model.cpp" />
+    <ClCompile Include="..\include\DirectXTK\ModelLoadCMO.cpp" />
+    <ClCompile Include="..\include\DirectXTK\ModelLoadSDKMESH.cpp" />
+    <ClCompile Include="..\include\DirectXTK\ModelLoadVBO.cpp" />
+    <ClCompile Include="..\include\DirectXTK\Mouse.cpp" />
+    <ClCompile Include="..\include\DirectXTK\PBREffectFactory.cpp" />
+    <ClCompile Include="..\include\DirectXTK\pch.cpp" />
+    <ClCompile Include="..\include\DirectXTK\PrimitiveBatch.cpp" />
+    <ClCompile Include="..\include\DirectXTK\ScreenGrab.cpp" />
+    <ClCompile Include="..\include\DirectXTK\SimpleMath.cpp" />
+    <ClCompile Include="..\include\DirectXTK\SpriteFont.cpp" />
+    <ClCompile Include="..\include\DirectXTK\VertexTypes.cpp" />
+    <ClCompile Include="..\include\DirectXTK\WICTextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="color_ps.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Pixel</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
-    </FxCompile>
-    <FxCompile Include="color_vs.hlsl">
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
-      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
-    </FxCompile>
+    <None Include="..\include\DirectXTK\SimpleMath.inl" />
+    <None Include="..\include\DirectXTK\TeapotData.inc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

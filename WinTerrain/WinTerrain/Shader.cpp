@@ -57,9 +57,9 @@ void Shader::CreateInputLayout()
     D3D11_INPUT_ELEMENT_DESC inputElementDesc[] = {
           { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },          
           { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 
           /*{ "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-          { "TEX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
           */
     };
     
@@ -78,7 +78,7 @@ void Shader::Render(ID3D11DeviceContext* deviceCtx, int indexCount)
     deviceCtx->DrawIndexed(indexCount, 0, 0);
 }
 
-void Shader::SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix)
+void Shader::SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix, ID3D11ShaderResourceView* texture)
 {
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     MatrixBufferType* dataPtr;
@@ -99,4 +99,7 @@ void Shader::SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::
 
     // Now set the constant buffer in the vertex shader with the updated values.
     deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);
+
+    deviceContext->PSSetShaderResources(0, 1, &texture);
+    deviceContext->PSSetSamplers(0, 1, &sampleState);
 }

@@ -1,7 +1,8 @@
 #pragma once
 #include "Renderer.h"
-#include "CubeMesh.h"
+#include "TerrainPlane.h"
 #include "Shader.h"
+#include "TextureManager.h"
 #include "FPCamera.h"
 
 #include <string>
@@ -18,8 +19,9 @@ public:
 private:
 
 	Renderer* renderer;
+	TextureManager* textureMgr;
 
-	CubeMesh* cube;
+	TerrainPlane* terrain;
 
 	Shader* shader;
 	FPCamera *cam;

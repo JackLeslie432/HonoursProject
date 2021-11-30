@@ -22,12 +22,14 @@ public:
 	void InitShader(const wchar_t* vsFilename, const wchar_t* psFilename);
 
 	void Render(ID3D11DeviceContext* deviceCtx, int indexCount);
-	void SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix);
+	void SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::XMMATRIX& worldMatrix, const DirectX::XMMATRIX& viewMatrix, const DirectX::XMMATRIX& projectionMatrix, ID3D11ShaderResourceView*);
 
 private:
 	ID3D11Device* pRenderer;
 	ID3D11InputLayout* pInputLayout;
+
 	ID3D11Buffer* matrixBuffer;
+	ID3D11SamplerState* sampleState;
 
 	ID3D11VertexShader* pVertexShader;
 	ID3D11PixelShader* pPixelShader;
