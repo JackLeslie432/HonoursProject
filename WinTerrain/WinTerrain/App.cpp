@@ -18,6 +18,8 @@ void App::Init(HWND hwnd, Input* in)
     cam = new FPCamera(input, 1200, 675, hwnd);
     cam->setPosition(0.0f, 0.0f, -10.0f);
     cam->update();
+
+    InitLSystem();
 }
 
 bool App::Frame(float dt)
@@ -47,4 +49,36 @@ bool App::Render()
 
     renderer->endScene();
     return false;
+}
+
+bool App::InitLSystem()
+{
+	LSystem system("a");
+	system.SetUsedRules(true, true);
+
+	// Adding normal rules
+	system.AddRule('a', "c");
+
+	// Adding stochastic rules
+	std::vector<std::pair<string, float>> rules;
+	std::pair<string, float> temp;
+
+	temp.first = "a";
+	temp.second = 50;
+
+	rules.push_back(temp);
+
+	temp.first = "b";
+	temp.second = 50;
+
+	rules.push_back(temp);
+
+	system.AddStochRule('a', rules);
+
+	// Adding context rules
+	system.AddContextRule('a', 'a', 'b', "c");
+
+	system.Iterate();    
+
+    return true;
 }

@@ -10,9 +10,9 @@ class App
 public:
 
 	App();
-	~App();
+	~App() {};
 
-	void run();
+	void run() {};
 
 	bool Frame();
 	bool Render();

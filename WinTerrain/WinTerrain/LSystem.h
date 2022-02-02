@@ -51,9 +51,9 @@ public:
 	inline const string GetCurrentSystem() { return m_CurrentSystem; }
 	inline const string GetAxiom() { return m_Axiom; }
 
-	void AddRule(const char, const string);			//Add a default rule to the system
-	void AddStochRule(const char, std::vector<std::pair<string, float>>);	//Add a Stochastic rule to the system
-	void AddContextRule(const char, const char, const char, const string);	//Add a Context rule to the system
+	void AddRule(const char predecessor, const string successor);			//Add a default rule to the system
+	void AddStochRule(const char predecessor, std::vector<std::pair<string, float>> successor);	//Add a Stochastic rule to the system
+	void AddContextRule(const char predecessor, const char prev, const char following, const string successor);	//Add a Context rule to the system
 	void Run(const int count);						//Iterate the system a set number of times
 	void Iterate();									//Apply the rules one time
 

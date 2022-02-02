@@ -49,15 +49,6 @@ int Window::StartWindow(int screenWidth, int screenHeight)
 	SetForegroundWindow(hwnd);
 	SetFocus(hwnd);
 
-	// Run the message loop.
-
-	/*MSG msg = { };
-	while (GetMessage(&msg, NULL, 0, 0))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}*/
-
 	wnd = hwnd;
 	return 0;
 }
@@ -143,7 +134,6 @@ void Window::Run()
 		}
 		else
 		{
-			float dt;
 			timer.frame();
 			// Update the scene.
 			app->Frame(timer.getTime());

@@ -1,9 +1,12 @@
 #pragma once
-#include "Renderer.h"
+
+#include "System/Renderer.h"
+
 #include "TerrainPlane.h"
-#include "Shader.h"
 #include "TextureManager.h"
+#include "Shader.h"
 #include "FPCamera.h"
+#include "LSystem.h"
 
 #include <string>
 
@@ -28,5 +31,6 @@ private:
 
 	Input* input;
 	
+	bool InitLSystem();
 };
 

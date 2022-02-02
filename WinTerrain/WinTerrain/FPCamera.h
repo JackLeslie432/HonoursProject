@@ -1,7 +1,7 @@
 #pragma once
 
-#include "camera.h"
-#include "input.h"
+#include "System/camera.h"
+#include "System/input.h"
 
 
 using namespace DirectX;
