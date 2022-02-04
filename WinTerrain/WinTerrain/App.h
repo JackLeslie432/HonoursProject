@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include "imgui_internal.h"
+
 class App
 {
 public:
@@ -18,10 +20,10 @@ public:
 	bool Render();
 
 	void Init(HWND, Input*);
-
 private:
 
 	Renderer* renderer;
+
 	TextureManager* textureMgr;
 
 	TerrainPlane* terrain;

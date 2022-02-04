@@ -1,8 +1,9 @@
 #include "App.h"
+#include "backends/imgui_impl_dx11.h"
+#include "backends/imgui_impl_win32.h"
 
 void App::Init(HWND hwnd, Input* in)
 {
-
     renderer = new Renderer(hwnd);
 
     textureMgr = new TextureManager(renderer->getDevice(),renderer->getDeviceContext());
@@ -10,6 +11,11 @@ void App::Init(HWND hwnd, Input* in)
 
     shader = new Shader(renderer->getDevice());
     shader->InitShader(L"color_vs.cso",L"color_ps.cso");
+
+	ImGui::CreateContext();
+
+	ImGui_ImplWin32_Init(hwnd);
+	ImGui_ImplDX11_Init(renderer->getDevice(), renderer->getDeviceContext());
 
     input = in;
 
@@ -24,9 +30,15 @@ void App::Init(HWND hwnd, Input* in)
 
 bool App::Frame(float dt)
 {
-    cam->update();
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+    ImGui::Begin("Cum");
 
+    cam->update();
     cam->move(dt);
+
+    ImGui::End();
 
     Render();
 
@@ -46,6 +58,9 @@ bool App::Render()
     terrain->SendData(renderer->getDeviceContext());
     shader->SetShaderParams(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"grass"));
     shader->Render(renderer->getDeviceContext(), terrain->GetIndexCount());
+
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
     renderer->endScene();
     return false;
@@ -68,7 +83,7 @@ bool App::InitLSystem()
 
 	rules.push_back(temp);
 
-	temp.first = "b";
+	temp.first = "ab";
 	temp.second = 50;
 
 	rules.push_back(temp);
@@ -78,7 +93,7 @@ bool App::InitLSystem()
 	// Adding context rules
 	system.AddContextRule('a', 'a', 'b', "c");
 
-	system.Iterate();    
+	system.Run(3);    
 
     return true;
 }

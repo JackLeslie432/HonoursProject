@@ -15,6 +15,7 @@ public:
 	~Window();
 
 	void Run();
+	void Init();
 
 private:
 	static LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
@@ -24,7 +25,7 @@ private:
 	HWND wnd;
 
 	HINSTANCE hInstance;
-	Input input;	
+	Input input;
 
 	core::Timer timer;
 };

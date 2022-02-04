@@ -5,9 +5,7 @@ Window::Window(App* in_app, HINSTANCE in_hInstance, int screenWidth, int screenH
 	app = in_app;
 	hInstance = in_hInstance;
 
-	StartWindow(screenWidth, screenHeight);
-
-	app->Init(wnd, &input);
+	StartWindow(screenWidth, screenHeight);	
 
 	_Application_Handle = this;
 }
@@ -53,6 +51,7 @@ int Window::StartWindow(int screenWidth, int screenHeight)
 	return 0;
 }
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
@@ -109,6 +108,9 @@ LRESULT Window::WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		return 0;
 	}
 
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, uMsg, wParam, lParam))
+		return true;
+
 	return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
@@ -146,4 +148,9 @@ void Window::Run()
 		}
 	}
 
+}
+
+void Window::Init()
+{
+	app->Init(wnd, &input);
 }
