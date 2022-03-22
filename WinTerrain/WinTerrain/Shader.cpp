@@ -26,6 +26,17 @@ void Shader::InitShader(const wchar_t* vsFilename, const wchar_t* psFilename)
     matrixBufferDesc.MiscFlags = 0;
     matrixBufferDesc.StructureByteStride = 0;
 
+	// Setup light buffer
+	D3D11_BUFFER_DESC lightBufferDesc;
+
+	lightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+	lightBufferDesc.ByteWidth = sizeof(LightBufferType);
+	lightBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	lightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	lightBufferDesc.MiscFlags = 0;
+	lightBufferDesc.StructureByteStride = 0;
+    pRenderer->CreateBuffer(&lightBufferDesc, NULL, &lightBuffer);
+
     // Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
     pRenderer->CreateBuffer(&matrixBufferDesc, NULL, &matrixBuffer);
 }
@@ -58,9 +69,8 @@ void Shader::CreateInputLayout()
           { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },          
           { "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
           { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-
-          /*{ "NOR", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-          */
+          { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+          
     };
     
     HRESULT hr = pRenderer->CreateInputLayout(inputElementDesc, ARRAYSIZE(inputElementDesc), pVsBlob->GetBufferPointer(), pVsBlob->GetBufferSize(), &pInputLayout);
@@ -96,6 +106,17 @@ void Shader::SetShaderParams(ID3D11DeviceContext* deviceContext, const DirectX::
    dataPtr->view = tview;
    dataPtr->projection = tproj;
    deviceContext->Unmap(matrixBuffer, 0);
+
+   // Send light data to pixel shader
+   LightBufferType* lightPtr;
+   deviceContext->Map(lightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+   lightPtr = (LightBufferType*)mappedResource.pData;
+   lightPtr->ambiant = DirectX::XMFLOAT4(0.4f, 0.4f, 0.4f, 0.4f);
+   lightPtr->diffuse = DirectX::XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f); 
+   lightPtr->direction = DirectX::XMFLOAT3(0.9f, -0.0f, 0.0f);
+   lightPtr->padding = 0.0f;
+   deviceContext->Unmap(lightBuffer, 0);
+   deviceContext->PSSetConstantBuffers(0, 1, &lightBuffer);
 
     // Now set the constant buffer in the vertex shader with the updated values.
     deviceContext->VSSetConstantBuffers(0, 1, &matrixBuffer);

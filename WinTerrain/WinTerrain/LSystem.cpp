@@ -9,15 +9,17 @@ LSystem::LSystem(string Axiom) :
 	srand(time(NULL));
 }
 
-void LSystem::Run(const int count)
+// Run the system for given iterations
+void LSystem::Run(const int count, bool reset)
 {
-	m_CurrentSystem = m_Axiom;
-	for (int i = 0; i < count; i++)
-	{
+	if (reset)
+		m_CurrentSystem = m_Axiom;
+
+	for (int i = 0; i < count; i++)	
 		Iterate();
-	}
 }
 
+// Add a normal rule
 void LSystem::AddRule(char predecessor, string successor)
 {
 	Rule temp;
@@ -25,9 +27,10 @@ void LSystem::AddRule(char predecessor, string successor)
 	temp.predecessor = predecessor;
 	temp.successor = successor;
 
-	baseRules.push_back(temp);
+	mapRule[predecessor] = temp;
 }
 
+// Add a stochastic rule (Has probability to change to many values)
 void LSystem::AddStochRule(const char predecessor, std::vector<std::pair<string, float>> successor)
 {
 	StochRule temp;
@@ -35,99 +38,146 @@ void LSystem::AddStochRule(const char predecessor, std::vector<std::pair<string,
 	temp.predecessor = predecessor;
 	temp.successors = successor;
 
-	for (int i = 0; i < successor.size(); i++)
+	// add up all he probabilities and add to the total
+	for (auto & i : successor)
 	{
-		temp.totalProbability += successor[i].second;
+		temp.totalProbability += i.second;
 	}
 
-	stochRules.push_back(temp);
+	mapStochRule[predecessor] = temp;
 }
 
+// Add a context rule rule (Changes depending on surrounding values)
 void LSystem::AddContextRule(const char predecessor, const char prev, const char following, const string successor)
 {
+	// Create temp to then add to rule list
 	ContextRule temp;
 
+	// Add passed in values then push to list of all rules
 	temp.predecessor = predecessor;
 	temp.prev = prev;
 	temp.following = following;
 	temp.successor = successor;
 
-	contextRules.push_back(temp);
+	mapContextRule[predecessor] = temp;
+}
+
+void LSystem::RemoveRule(const char predecessor)
+{
+	mapRule.erase(predecessor);
+}
+
+void LSystem::RemoveStochRule(const char predecessor)
+{
+	mapStochRule.erase(predecessor);
+}
+
+void LSystem::RemoveContextRule(const char predecessor)
+{
+	mapContextRule.erase(predecessor);
 }
 
 //Evolve the system one time
 void LSystem::Iterate()
 {
+	// Store what the system is at the start
 	string start = m_CurrentSystem;
 	int count = 0;
 
+	// Loop through the whole system
 	for (auto s : start)
 	{
 		bool rule = false;
-		if (useStochRules)
-		{
-			for (int i = 0; i < stochRules.size(); i++)
-			{
-				if (s == stochRules[i].predecessor)
-				{
-					int random = rand() % stochRules[i].totalProbability;
 
-					int j = 0;
+		// Iterate through stochastic rules
+		rule = IterateStochRule(s, rule, count);
 
-					while (j < stochRules[i].successors.size())
-					{
-						random -= stochRules[i].successors[j].second;
-						if (random < 0)
-						{
-							break;
-						}
-						j++;
-					}
+		// Iterate though all context rules
+		rule = IterateContextRule(s, rule, count);
 
-					if (random < stochRules[i].successors[j].second)
-					{
-						m_CurrentSystem.replace(count, 1, stochRules[i].successors[j].first);
-						count += stochRules[i].successors[j].first.size();
-						rule = true;
-						break;
-					}
-				}
-			}
-		}
+		// iterate through base rules
+		rule = IterateRule(s, rule, count);
 
-		if (useContextRules)
-		{
-			for (int i = 0; i < contextRules.size(); i++)
-			{
-				if (s == contextRules[i].predecessor)
-				{
-					if (m_CurrentSystem[count - 1] == contextRules[i].prev && count + 1 > m_CurrentSystem.size() && m_CurrentSystem[count + 1] == contextRules[i].following)
-					{
-						m_CurrentSystem.replace(count, 1, contextRules[i].successor);
-						count += contextRules[i].successor.size();
-						rule = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (!rule)
-		{
-			for (int i = 0; i < baseRules.size(); i++)
-			{
-				if (s == baseRules[i].predecessor)
-				{
-					m_CurrentSystem.replace(count, 1, baseRules[i].successor);
-					count += baseRules[i].successor.size();
-					rule = true;
-					break;
-				}
-			}
-		}
-
-		// increment by 1 if not rule found
+		// increment by 1 if no rule found
 		if (!rule)
 			count++;
 	}
+}
+
+bool LSystem::IterateRule(char s, bool rule, int count)
+{
+	if (!rule)
+	{
+		for (const auto& rules : mapRule)
+		{
+			if (s == rules.first)
+			{
+				m_CurrentSystem.replace(count, 1, rules.second.successor);
+				count += rules.second.successor.size();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+bool LSystem::IterateStochRule(char s, bool rule, int count)
+{
+	if (useStochRules)
+	{
+		for (const auto& rules : mapStochRule)
+		{
+			if (s == rules.first)
+			{
+				// Find a random number thats within the bounds of the probability
+				int random = rand() % rules.second.totalProbability;
+
+				int j = 0;
+
+				// Loop through all the possible successors
+				while (j < rules.second.successors.size())
+				{
+					// Remove the probability of the current successor
+					random -= rules.second.successors[j].second;
+					if (random < 0) // Stop when reached 0
+						break;
+						
+					j++;
+				}
+
+				// replace the current letter with the rule
+				if (random < rules.second.successors[j].second)
+				{
+					if (rules.second.successors[j].second == rules.first)
+						break;
+
+					m_CurrentSystem.replace(count, 1, rules.second.successors[j].first);
+					count += rules.second.successors[j].first.size();
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+bool LSystem::IterateContextRule(char s, bool rule, int count)
+{
+	if (useContextRules && !rule)
+	{
+		for (const auto& rules : mapContextRule)
+		{
+			if (s == rules.first)
+			{
+				if (m_CurrentSystem[count - 1] == rules.second.prev && count + 1 < m_CurrentSystem.size() && m_CurrentSystem[count + 1] == rules.second.following)
+				{
+					m_CurrentSystem.replace(count, 1, rules.second.successor);
+					count += rules.second.successor.size();
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }

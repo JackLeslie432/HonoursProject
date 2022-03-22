@@ -22,17 +22,38 @@ public:
 	void Init(HWND, Input*);
 private:
 
+	Input* input;
+
 	Renderer* renderer;
-
 	TextureManager* textureMgr;
-
-	TerrainPlane* terrain;
-
 	Shader* shader;
 	FPCamera *cam;
 
-	Input* input;
+	// Terrain settings
+	TerrainPlane* terrain;
+
+	// variables for terrain control
+	int islandAmount = 0;
+	int treeAmount = 0;
+	int mountainAmount = 0;
+	int runAmount = 0;
+	bool reset = true;
+
+	bool isSettingsOpen = false;
+
+	LSystem* system;
 	
+	// Local functions
 	bool InitLSystem();
+	void DrawGUI();
+
+	enum OpenSetings
+	{
+		Base,
+		Island,
+		Trees,
+	};
+
+	OpenSetings openSettings = Base;
 };
 

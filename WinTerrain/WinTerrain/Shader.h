@@ -14,6 +14,13 @@ class Shader
 		DirectX::XMMATRIX projection;
 	};
 
+	struct LightBufferType
+	{
+		DirectX::XMFLOAT4 ambiant;
+		DirectX::XMFLOAT4 diffuse;
+		DirectX::XMFLOAT3 direction;
+		float padding;
+	};
 public:
 
 	Shader(ID3D11Device*);
@@ -36,6 +43,8 @@ private:
 
 	ID3DBlob* pVsBlob;
 	ID3DBlob* pPsBlob;
+
+	ID3D11Buffer* lightBuffer;
 
 	bool CreateVertexShader(const wchar_t* vsFilename);
 	bool CreatePixelShader(const wchar_t* psFilename);

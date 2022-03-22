@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 using std::string;
 
@@ -34,12 +35,6 @@ public:
 		string successor;
 	};
 
-	// Parametric
-	struct ParametricRule
-	{
-		char predecessor;
-	};
-
 	// Functions
 
 	LSystem(string Axiom);
@@ -54,7 +49,20 @@ public:
 	void AddRule(const char predecessor, const string successor);			//Add a default rule to the system
 	void AddStochRule(const char predecessor, std::vector<std::pair<string, float>> successor);	//Add a Stochastic rule to the system
 	void AddContextRule(const char predecessor, const char prev, const char following, const string successor);	//Add a Context rule to the system
-	void Run(const int count);						//Iterate the system a set number of times
+
+	void RemoveRule(const char predecessor);
+	void RemoveStochRule(const char predecessor);
+	void RemoveContextRule(const char predecessor);
+
+	void ClearRule() { mapRule.clear();};
+	void ClearStochRule() { mapStochRule.clear(); };
+	void ClearContextRule() { mapContextRule.clear(); };
+
+	std::unordered_map<char, Rule> GetRules() { return mapRule;};
+	std::unordered_map<char, StochRule> GetStochRules() { return mapStochRule; };
+	std::unordered_map<char, ContextRule> GetContextRules() { return mapContextRule; };
+
+	void Run(const int count, bool reset);						//Iterate the system a set number of times
 	void Iterate();									//Apply the rules one time
 
 private:
@@ -62,10 +70,15 @@ private:
 	string m_Axiom;
 	string m_CurrentSystem;
 
-	std::vector<Rule> baseRules;
-	std::vector<StochRule> stochRules;
-	std::vector<ContextRule> contextRules;
+	std::unordered_map<char, Rule> mapRule;
+	std::unordered_map<char, StochRule> mapStochRule;
+	std::unordered_map<char, ContextRule> mapContextRule;
 
 	bool useStochRules = true;
 	bool useContextRules = true;
+
+	bool IterateRule(char s, bool rule, int count);
+	bool IterateStochRule(char s, bool rule, int count);
+	bool IterateContextRule(char s, bool rule, int count);
+
 };
