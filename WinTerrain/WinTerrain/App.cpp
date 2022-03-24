@@ -31,10 +31,18 @@ void App::Init(HWND hwnd, Input* in)
     cam->update();
 
     InitLSystem();
+
+	tree = new Trees(2);
+
+	tree->init(renderer->getDevice(), renderer->getDeviceContext(), hwnd);
 }
 
 bool App::Frame(float dt)
 {
+	if (input->isKeyDown(27))	
+		return false;
+	
+
     // Initialize ImGui window
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -69,6 +77,8 @@ bool App::Render()
     terrain->SendData(renderer->getDeviceContext());
     shader->SetShaderParams(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"grass"));
     shader->Render(renderer->getDeviceContext(), terrain->GetIndexCount());
+
+	tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"grass"), textureMgr->GetTexture(L"grass"));
 
     // Render the ImGui window
 	ImGui::Render();
@@ -159,7 +169,7 @@ void App::DrawGUI()
 	    if (ImGui::Button("Tree Settings"))
         {
             isSettingsOpen = true; 
-            openSettings = Trees;
+            openSettings = Tree;
         }
         
         ImGui::SliderInt("Mountain Amount", &mountainAmount, 0, 5);
@@ -176,8 +186,11 @@ void App::DrawGUI()
 
         ImGui::InputTextWithHint("Seed", "Input seed here", seed, sizeof(seed));
 
-	    if (ImGui::Button("Regen Map"))
-		    terrain->Regenerate(nullptr, renderer->getDevice());
+        if (ImGui::Button("Regen Map"))
+        {
+            terrain->Regenerate(nullptr, renderer->getDevice());
+            tree->CreateTress(50, 50, terrain->GetHeightMap(), terrain->Resolution());
+        }
 
 	ImGui::End();
 
@@ -199,13 +212,15 @@ void App::DrawGUI()
             break;
         case App::Island: // Draw island window
             ImGui::Begin("Island settings");
+
             static float c;
-            ImGui::SliderFloat("Scale", &terrain->PerlinScale(), 0, 50);
-            ImGui::SliderFloat("Scale", &terrain->PerlinScale(), 0, 50);
-            ImGui::SliderFloat("Scale", &terrain->PerlinScale(), 0, 50);
+            ImGui::SliderFloat("Size X", &terrain->IslandSizeX(), 0, 50);
+            ImGui::SliderFloat("Size Y", &terrain->IslandSizeY(), 0, 50);
+			ImGui::SliderFloat2("Center Y", &terrain->IslandCentre().x, 0, 500);
+            ImGui::SliderFloat("Height", &terrain->IslandHeight(), 0, 100);
 
             break;
-        case App::Trees: // Draw tree window
+        case App::Tree: // Draw tree window
             ImGui::Begin("Tree Settings");
             break;
         default:

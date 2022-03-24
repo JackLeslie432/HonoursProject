@@ -250,6 +250,8 @@ void TerrainPlane::Regenerate(float* heightMap_, ID3D11Device* device)
 
 	PerlinNoise(perlinScale/perlinOctaves, perlinOffset, perlinFrequency, perlinOctaves);
 
+	QuadraticDistance(islandSizeX, islandSizeY, islandCentre.x, islandCentre.y, islandHeight);
+
 	CreateBuffers(device, BuildMesh(), BuildIndex());
 }
 
@@ -355,4 +357,32 @@ float TerrainPlane::Gradient(int hash, float x, float y)
 	float v = h < 4 ? y : x;	// if hash < 4 v = y otherwise v = x
 
 	return ((h & 1) ? -u : u) + ((h & 2) ? v : -v);
+}
+
+void TerrainPlane::QuadraticDistance(float sizeX, float sizeY, float centerX, float centerY, float height)
+{
+	for (int j = 0; j < resolution; j++)
+	{
+		for (int i = 0; i < resolution; i++)
+		{
+			// i,j pos, 500 center
+			float distance_x = fabs(i - centerX);
+			float distance_y = fabs(j - centerY);
+			float distance = sqrt(distance_x * distance_x + distance_y * distance_y); // circular mask
+
+			// 50 size
+			float max_width = sizeX * 0.5f;
+			float max_height = sizeY * 0.5f;
+			float deltax = distance / max_width;
+			float deltay = distance / max_height;
+			float gradient = deltax * deltay;
+
+			// -100 height
+			if (gradient < 1 )
+				heightMap[(i * resolution + j)] += height;
+			else
+				heightMap[(i * resolution + j)] += height*(1/gradient);
+			//heightMap[(i * resolution + j)] += 1-gradient;
+		}
+	}
 }

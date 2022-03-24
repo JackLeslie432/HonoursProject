@@ -11,7 +11,7 @@ Renderer::Renderer(HWND hwnd)
 
 	worldMatrix = DirectX::XMMatrixIdentity();
 
-	projectionMatrix = XMMatrixPerspectiveFovLH(90, 1200/675, 1, 100);
+	projectionMatrix = XMMatrixPerspectiveFovLH(90, 1200/675, 1, 500);
 
 }
 

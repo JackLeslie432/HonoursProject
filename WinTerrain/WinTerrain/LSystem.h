@@ -77,8 +77,8 @@ private:
 	bool useStochRules = true;
 	bool useContextRules = true;
 
-	bool IterateRule(char s, bool rule, int count);
-	bool IterateStochRule(char s, bool rule, int count);
-	bool IterateContextRule(char s, bool rule, int count);
+	bool IterateRule(char s, bool rule, int& count);
+	bool IterateStochRule(char s, bool rule, int& count);
+	bool IterateContextRule(char s, bool rule, int& count);
 
 };

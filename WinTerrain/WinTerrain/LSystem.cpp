@@ -104,7 +104,7 @@ void LSystem::Iterate()
 	}
 }
 
-bool LSystem::IterateRule(char s, bool rule, int count)
+bool LSystem::IterateRule(char s, bool rule, int& count)
 {
 	if (!rule)
 	{
@@ -121,7 +121,7 @@ bool LSystem::IterateRule(char s, bool rule, int count)
 	return false;
 }
 
-bool LSystem::IterateStochRule(char s, bool rule, int count)
+bool LSystem::IterateStochRule(char s, bool rule, int& count)
 {
 	if (useStochRules)
 	{
@@ -162,7 +162,7 @@ bool LSystem::IterateStochRule(char s, bool rule, int count)
 	return false;
 }
 
-bool LSystem::IterateContextRule(char s, bool rule, int count)
+bool LSystem::IterateContextRule(char s, bool rule, int& count)
 {
 	if (useContextRules && !rule)
 	{

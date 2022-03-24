@@ -7,6 +7,7 @@
 #include "Shader.h"
 #include "FPCamera.h"
 #include "LSystem.h"
+#include "Trees.h"
 
 #include <string>
 
@@ -47,13 +48,16 @@ private:
 	bool InitLSystem();
 	void DrawGUI();
 
+	Trees* tree;
+
 	enum OpenSetings
 	{
 		Base,
 		Island,
-		Trees,
+		Tree,
 	};
 
 	OpenSetings openSettings = Base;
+
 };
 

@@ -138,13 +138,8 @@ void Window::Run()
 		{
 			timer.frame();
 			// Update the scene.
-			app->Frame(timer.getTime());
-
-			// Render frames during idle time (when no messages are waiting).
-			//renderer->Render();
-
-			// Present the frame to the screen.
-			//deviceResources->Present();
+			if (!app->Frame(timer.getTime()))
+				return;
 		}
 	}
 
