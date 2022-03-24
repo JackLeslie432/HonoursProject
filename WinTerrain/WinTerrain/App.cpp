@@ -78,7 +78,7 @@ bool App::Render()
     shader->SetShaderParams(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"grass"));
     shader->Render(renderer->getDeviceContext(), terrain->GetIndexCount());
 
-	tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"grass"), textureMgr->GetTexture(L"grass"));
+	//tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"grass"), textureMgr->GetTexture(L"grass"));
 
     // Render the ImGui window
 	ImGui::Render();
@@ -189,7 +189,7 @@ void App::DrawGUI()
         if (ImGui::Button("Regen Map"))
         {
             terrain->Regenerate(nullptr, renderer->getDevice());
-            tree->CreateTress(50, 50, terrain->GetHeightMap(), terrain->Resolution());
+            //tree->CreateTress(50, 50, terrain->GetHeightMap(), terrain->Resolution());
         }
 
 	ImGui::End();
