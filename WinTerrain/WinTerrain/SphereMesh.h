@@ -15,7 +15,7 @@ class SphereMesh : public BaseMesh
 {
 
 public:
-	SphereMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int resolution = 20);
+	SphereMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int resolution = 5);
 	~SphereMesh();
 
 protected:

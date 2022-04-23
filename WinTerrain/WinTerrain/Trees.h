@@ -38,7 +38,7 @@ public:
 	void init(ID3D11Device* device, ID3D11DeviceContext* deviceCon, HWND hwnd);
 	void render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, ID3D11ShaderResourceView* tex, ID3D11ShaderResourceView* leaveTex);
 
-	void CreateTress(int height, int width, float* heightMap, int resolution);
+	void CreateTrees(int height, int width, float* heightMap, int resolution, XMFLOAT2 startPos);
 	void RemoveTrees();
 
 	void setIterations(int it) { iterations = it; };
@@ -90,19 +90,19 @@ private:
 		}
 	};
 
-	// init grid and active list for poission disc
-	std::vector<vec2f> grid;
-	std::vector<vec2f> active;
+	// init grid and active list for Poisson disc
+	std::vector<vec2f> grid = {};
+	std::vector<vec2f> active = {};
 	
-	CylinderMesh* branchMesh;
-	SphereMesh* treeLeave;
+	CylinderMesh* branchMesh = nullptr;
+	SphereMesh* treeLeave = nullptr;
 
-	std::vector<Tree*> trees;
+	std::vector<Tree*> trees = {};
 
 	// Shader and device
-	ID3D11DeviceContext* deviceContext;
-	ID3D11Device* device;
-	Shader* shader;
+	ID3D11DeviceContext* deviceContext = nullptr;
+	ID3D11Device* device = nullptr;
+	Shader* shader = nullptr;
 
 	// L-system variables
 	LSystem	lSystem;
@@ -115,6 +115,6 @@ private:
 	
 	// Member functions
 	void BuildTree(Tree* tree);
-	void poissonDisc(int height, int width);
+	void PoissonDisc(int height, int width, XMFLOAT2);
 };
 

@@ -2,6 +2,7 @@
 
 #include <d3d11.h>
 #include <directxmath.h>
+#include <vector>
 
 using namespace DirectX;
 
@@ -16,7 +17,7 @@ protected:
 		XMFLOAT2 texture;
 		XMFLOAT3 normal;
 	};
-
+	
 public:
 
 	TerrainPlane(ID3D11Device*);
@@ -28,20 +29,32 @@ public:
 	void Resize(int);
 	void Regenerate(float* heightMap, ID3D11Device* device);
 
+	public void CreateIsland();
+
 	int Resolution() { return resolution; };
 	float* GetHeightMap() { return heightMap; };
 
-	float& PerlinScale() { return perlinScale; };
-	float& PerlinFrequency() { return perlinFrequency; };
-	float& PerlinOffset() { return perlinOffset; };
-	int& PerlinOctaves() { return perlinOctaves; };
+	struct PerlinSettings
+	{
+		float scale = 8;
+		float frequency = 0.1;
+		float offset = 0.5;
+		int octaves = 5;
+	};
 
-	//float& IslandCenterX() { return islandCentre.x; };
-	//float& IslandCentreY() { return islandCentre.y; };
-	XMFLOAT2& IslandCentre() { return islandCentre; };
-	float& IslandSizeX() { return islandSizeX; };
-	float& IslandSizeY() { return islandSizeY; };
-	float& IslandHeight() { return islandHeight; };
+	struct IslandSettings
+	{
+		XMFLOAT2 centre;
+		XMFLOAT2 size = XMFLOAT2(100,100);
+
+		float height = 50;
+		int amount = 0;
+	};
+
+	void SetPerlin(PerlinSettings val) {  perlinSettings = val;};
+	void SetIsland(IslandSettings val) {  islandSettings = val;};
+
+	std::vector<XMFLOAT2> GetIslandCenter() { return islandCentres; };
 protected:
 
 	void CreateBuffers(ID3D11Device* ,VertexType* ,unsigned long* );
@@ -59,24 +72,19 @@ protected:
 	// Quadratic distance
 	void QuadraticDistance(float sizeX, float sizeY, float centerX, float centerY, float height);
 
+	// Particle
+	void ParticleDeposition(int particlePointX, int particlePointZ);
+
 	// Plane variables
 	ID3D11Buffer* vertexBuffer, * indexBuffer;
 	int vertexCount, indexCount, resolution;
 	float scale;
 
-	// Perlin variables
-	float perlinScale = 20;
-	float perlinFrequency = 0.1;
-	float perlinOffset = 0.5;
-	int perlinOctaves = 5;
+	// Settings variables
+	PerlinSettings perlinSettings;
+	IslandSettings islandSettings;
 
-	// Island variables
-	XMFLOAT2 islandCentre;
-
-	float islandSizeX = 50;
-	float islandSizeY = 50;
-
-	float islandHeight = 50;
+	std::vector<XMFLOAT2> islandCentres;
 
 	// Height
 	float* heightMap;

@@ -24,6 +24,8 @@ void App::Init(HWND hwnd, Input* in)
 
     // Load in textures to be used
     textureMgr->LoadTexture(L"grass", L"res/grass.png");
+    textureMgr->LoadTexture(L"bark", L"res/bark.png");
+    textureMgr->LoadTexture(L"leaves", L"res/leaves.png");
 
     // Setup a new camera
     cam = new FPCamera(input, 1200, 675, hwnd);
@@ -34,7 +36,7 @@ void App::Init(HWND hwnd, Input* in)
 
 	tree = new Trees(2);
 
-	tree->init(renderer->getDevice(), renderer->getDeviceContext(), hwnd);
+	tree->init(renderer->getDevice(), renderer->getDeviceContext(), hwnd);    
 }
 
 bool App::Frame(float dt)
@@ -63,6 +65,7 @@ bool App::Frame(float dt)
 
 bool App::Render()
 {
+
     XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 
     // Set the background of the scene
@@ -78,7 +81,7 @@ bool App::Render()
     shader->SetShaderParams(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"grass"));
     shader->Render(renderer->getDeviceContext(), terrain->GetIndexCount());
 
-	//tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"grass"), textureMgr->GetTexture(L"grass"));
+	tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"bark"), textureMgr->GetTexture(L"leaves"));
 
     // Render the ImGui window
 	ImGui::Render();
@@ -91,24 +94,63 @@ bool App::Render()
 bool App::InitLSystem()
 {
     // Create a new L-system
-	system = new LSystem("a");
+	system = new LSystem("O");
 	system->SetUsedRules(true, true);
 
 	// Adding normal rules
-	system->AddRule('a', "c");
+    std::string islands("[");
+    for (int i = 0; i < islandAmount; i++)
+        islands.append("I");
+    islands.append("]");
+
+	system->AddRule('O', islands);
 
     // Add stochastic rules
     StochasticRule stochRules;
 
-    stochRules.Add("a", 50);
-    stochRules.Add("ab", 50);
+    stochRules.Add("T", 50);
+    stochRules.Add("M", 50);
 
-	system->AddStochRule('a', stochRules.GetRules());
+	system->AddStochRule('I', stochRules.GetRules());
 
 	// Adding context rules
 	system->AddContextRule('a', 'a', 'b', "c");
 
-	system->Run(3, true);    
+	system->Run(3, true);
+
+    return true;
+}
+
+bool App::RegenSystem()
+{
+    if (system == nullptr)
+        return false;
+
+    // Clear all current rules
+    system->ClearContextRule();
+    system->ClearStochRule();
+    system->ClearRule();
+
+	system->SetUsedRules(true, false);
+
+    // Reset system axiom
+    system->Run(0, true);
+
+	// Adding normal rules
+	std::string islands("[");
+	for (int i = 0; i < islandAmount; i++)
+		islands.append("I");
+	islands.append("]");
+
+	system->AddRule('O', islands);
+
+	// Add stochastic rules
+	StochasticRule stochRules;
+
+	stochRules.Add("IT", 50);
+	stochRules.Add("IM", 50);
+
+	system->AddStochRule('I', stochRules.GetRules());
 
     return true;
 }
@@ -118,7 +160,8 @@ void App::DrawGUI()
     // Draw a new tab to show L-system variables
     ImGui::Begin("L-system");
     
-        ImGui::Text("L-System: %s", system->GetCurrentSystem().c_str());
+        ImGui::Text("L-System Axiom: %s", system->GetAxiom().c_str());
+        ImGui::Text("L-System Current: %s", system->GetCurrentSystem().c_str());
 
         if (ImGui::Button("Iterate L-System"))
             system->Iterate();
@@ -128,6 +171,9 @@ void App::DrawGUI()
 
         if (ImGui::Button("Run for x L-System"))
             system->Run(runAmount, reset);
+        
+        if (ImGui::Button("Regen L-System"))
+            RegenSystem();
 
         ImGui::NewLine();
         ImGui::Text("Standard Rules");
@@ -156,7 +202,11 @@ void App::DrawGUI()
     // Draw a new tab to show terrain variables
     ImGui::Begin("Terrain");
     
-	    ImGui::SliderInt("Island Amount", &islandAmount, 0, 5);
+        if (ImGui::SliderInt("Island Amount", &islandAmount, 0, 5))
+        {
+		    islandSettings.amount = islandAmount;
+		    terrain->SetIsland(islandSettings);
+        }
 
 	    if (ImGui::Button("Island Settings"))
         { 
@@ -189,35 +239,63 @@ void App::DrawGUI()
         if (ImGui::Button("Regen Map"))
         {
             terrain->Regenerate(nullptr, renderer->getDevice());
-            //tree->CreateTress(50, 50, terrain->GetHeightMap(), terrain->Resolution());
+
+            for (auto c : system->GetCurrentSystem())
+            {
+                switch (c)
+                {
+                case 'I':
+                    terrain->CreateIsland();
+                    break;
+                case '[':
+                    break;
+                case ']':
+                    break;
+                case 'T':
+                    break;
+                case 'M':
+                    break;
+                default:
+                    break;
+                }
+            }
+
+
+            tree->setDensity(islandSettings.size.x/50);
+            if (!terrain->GetIslandCenter().empty())
+                tree->CreateTrees(islandSettings.size.x/2, islandSettings.size.x/2, terrain->GetHeightMap(), terrain->Resolution(),terrain->GetIslandCenter().front());
         }
 
 	ImGui::End();
 
     // Draw Side Panel
     if (isSettingsOpen)
-    {
-      
+    {      
         // Check what setting window need to be open
+        static TerrainPlane::PerlinSettings perlinSettings;
+        
         switch (openSettings)
         {
         case App::Base: // Draw base window
             ImGui::Begin("Perlin Settings");
 
-            ImGui::SliderFloat("Scale", &terrain->PerlinScale(), 0, 50);
-            ImGui::SliderFloat("Frequency", &terrain->PerlinFrequency(), 0, 20);
-            ImGui::SliderFloat("Offset", &terrain->PerlinOffset(), 0, 20);
-            ImGui::SliderInt("Octaves", &terrain->PerlinOctaves(), 0, 10);
+            ImGui::SliderFloat("Scale", &perlinSettings.scale, 0, 500);
+            ImGui::SliderFloat("Frequency", &perlinSettings.frequency, 0, 1);
+            ImGui::SliderFloat("Offset", &perlinSettings.offset, 0, 20);
+            ImGui::SliderInt("Octaves", &perlinSettings.octaves, 0, 10);
+
+            terrain->SetPerlin(perlinSettings);
 
             break;
         case App::Island: // Draw island window
             ImGui::Begin("Island settings");
+            
+            ImGui::SliderFloat("Size X", &islandSettings.size.x, 50, 300);
+            ImGui::SliderFloat("Size Y", &islandSettings.size.y, 50, 300);
+			ImGui::SliderFloat2("Center Y", &islandSettings.centre.x, 0, 500);
+            ImGui::SliderFloat("Height", &islandSettings.height, 0, 100);
 
-            static float c;
-            ImGui::SliderFloat("Size X", &terrain->IslandSizeX(), 0, 50);
-            ImGui::SliderFloat("Size Y", &terrain->IslandSizeY(), 0, 50);
-			ImGui::SliderFloat2("Center Y", &terrain->IslandCentre().x, 0, 500);
-            ImGui::SliderFloat("Height", &terrain->IslandHeight(), 0, 100);
+            terrain->SetIsland(islandSettings);
 
             break;
         case App::Tree: // Draw tree window

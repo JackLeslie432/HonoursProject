@@ -30,6 +30,8 @@ private:
 	Shader* shader;
 	FPCamera *cam;
 
+	TerrainPlane::IslandSettings islandSettings;
+
 	// Terrain settings
 	TerrainPlane* terrain;
 
@@ -46,6 +48,7 @@ private:
 	
 	// Local functions
 	bool InitLSystem();
+	bool RegenSystem();
 	void DrawGUI();
 
 	Trees* tree;

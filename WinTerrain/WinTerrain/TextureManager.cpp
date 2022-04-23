@@ -18,7 +18,6 @@ void TextureManager::LoadTexture(const wchar_t* uid,const wchar_t* filename)
     std::ifstream infile(filename);
     if (infile.good())
     {
-
         HRESULT hr = DirectX::CreateWICTextureFromFile(device, deviceCtx, filename, NULL, &texture);
         assert(SUCCEEDED(hr));
 
@@ -46,13 +45,13 @@ void TextureManager::GenerateTexture()
 
 ID3D11ShaderResourceView* TextureManager::GetTexture(const wchar_t* uid)
 {
-    ID3D11ShaderResourceView* tex = nullptr;
+	ID3D11ShaderResourceView* tex = nullptr;
 
-    if (textureMap.size() > 0)
-        tex = textureMap.at(const_cast<wchar_t*>(uid));
+	if (textureMap.size() > 0)
+		tex = textureMap.at(const_cast<wchar_t*>(uid));
 
-    if (tex)    
-        return tex;
-    else
-	    return nullptr;
+	if (tex)
+		return tex;
+	else
+		return nullptr;
 }

@@ -93,10 +93,12 @@ void LSystem::Iterate()
 		rule = IterateStochRule(s, rule, count);
 
 		// Iterate though all context rules
-		rule = IterateContextRule(s, rule, count);
+		if (!rule)
+			rule = IterateContextRule(s, rule, count);
 
 		// iterate through base rules
-		rule = IterateRule(s, rule, count);
+		if (!rule)
+			rule = IterateRule(s, rule, count);
 
 		// increment by 1 if no rule found
 		if (!rule)
@@ -106,16 +108,13 @@ void LSystem::Iterate()
 
 bool LSystem::IterateRule(char s, bool rule, int& count)
 {
-	if (!rule)
+	for (const auto& rules : mapRule)
 	{
-		for (const auto& rules : mapRule)
+		if (s == rules.first)
 		{
-			if (s == rules.first)
-			{
-				m_CurrentSystem.replace(count, 1, rules.second.successor);
-				count += rules.second.successor.size();
-				return true;
-			}
+			m_CurrentSystem.replace(count, 1, rules.second.successor);
+			count += rules.second.successor.size();
+			return true;
 		}
 	}
 	return false;
@@ -164,7 +163,7 @@ bool LSystem::IterateStochRule(char s, bool rule, int& count)
 
 bool LSystem::IterateContextRule(char s, bool rule, int& count)
 {
-	if (useContextRules && !rule)
+	if (useContextRules)
 	{
 		for (const auto& rules : mapContextRule)
 		{

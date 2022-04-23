@@ -35,7 +35,7 @@ public:
 		string successor;
 	};
 
-	// Functions
+	//----- Functions -----
 
 	LSystem(string Axiom);
 
@@ -46,14 +46,17 @@ public:
 	inline const string GetCurrentSystem() { return m_CurrentSystem; }
 	inline const string GetAxiom() { return m_Axiom; }
 
+	// Add a new rule to the system
 	void AddRule(const char predecessor, const string successor);			//Add a default rule to the system
 	void AddStochRule(const char predecessor, std::vector<std::pair<string, float>> successor);	//Add a Stochastic rule to the system
 	void AddContextRule(const char predecessor, const char prev, const char following, const string successor);	//Add a Context rule to the system
 
+	// Remove a rule from the system
 	void RemoveRule(const char predecessor);
 	void RemoveStochRule(const char predecessor);
 	void RemoveContextRule(const char predecessor);
 
+	// Clear all rules from the system
 	void ClearRule() { mapRule.clear();};
 	void ClearStochRule() { mapStochRule.clear(); };
 	void ClearContextRule() { mapContextRule.clear(); };
@@ -63,7 +66,7 @@ public:
 	std::unordered_map<char, ContextRule> GetContextRules() { return mapContextRule; };
 
 	void Run(const int count, bool reset);						//Iterate the system a set number of times
-	void Iterate();									//Apply the rules one time
+	void Iterate();												//Apply the rules one time
 
 private:
 

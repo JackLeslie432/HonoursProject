@@ -79,6 +79,7 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 			worldMatrix = orginalWorld;
 			float scaling = branch->dirVect.y * 0.1;
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixScaling(scaling, scaling, scaling));
+			
 			//if (branch->rotMatrix != NULL)
 				//worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, branch->rotMatrix);
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(branch->posVect.x, branch->posVect.y, branch->posVect.z));
@@ -105,18 +106,28 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 	}
 }
 
-void Trees::CreateTress(int height, int width, float* heightMap, int resolution)
+void Trees::CreateTrees(int height, int width, float* heightMap, int resolution, XMFLOAT2 startPos)
 {
 	RemoveTrees();
-	poissonDisc(height/1.3, width/1.3);
+	PoissonDisc(height, width, startPos);
+
+	std::vector<float> heighting(heightMap,heightMap+ resolution * resolution);
+
 	for (auto gridPoint : grid)
 	{		
-		if (gridPoint.x && heightMap[int((gridPoint.x+3)*1.3) + int((gridPoint.y+3)*1.3) * resolution] < 8 && heightMap[int((gridPoint.x+3)*1.3) + int((gridPoint.y+3)*1.3) * resolution] > 0)
+		if (gridPoint.x)
 		{
+			int x = int(gridPoint.x) + startPos.x;
+			int y = int(gridPoint.y) + startPos.y;
+			
 			Tree* tree = new Tree();
-						
-			tree->setHeight(heightMap[int((gridPoint.x+3)*1.3) + int((gridPoint.y+3)*1.3) * resolution]);
-			tree->setPosition(gridPoint.x +3, gridPoint.y+3 );
+
+			if (x > resolution || y > resolution)
+				return;
+
+			tree->setHeight(heightMap[y + (x * resolution)]);
+			tree->setPosition(x, y);
+			
 			BuildTree(tree);
 
 			trees.push_back(tree);
@@ -203,24 +214,35 @@ void Trees::BuildTree(Tree* tree)
 			break;
 			// Restore position
 		case ']':
-			pos = posVector.back();	//Current position
-			posVector.pop_back();
+			if (!posVector.empty())
+			{
+				pos = posVector.back();	//Current position
+				posVector.pop_back();
+			}
 
-			currentRotation = rotVector.back();	//Current position
-			rotVector.pop_back();
+			if (!rotVector.empty())
+			{
+				currentRotation = rotVector.back();	//Current position
+				rotVector.pop_back();
+			}
 
-			dir = dirVector.back();
-			dirVector.pop_back();
+			if (!dirVector.empty())
+			{
+				dir = dirVector.back();
+				dirVector.pop_back();
+			}
 			branch--;
 			break;
 		case '&':			
 			currentRotation *= XMMatrixRotationAxis(XMVector3Transform(right, currentRotation), XMConvertToRadians(rand() % 50 + 15));
 			break;
 		case '/':
-			currentRotation *= XMMatrixRotationAxis(XMVector3Transform(up, rotVector.back()), XMConvertToRadians(120));
+			if (!rotVector.empty())
+				currentRotation *= XMMatrixRotationAxis(XMVector3Transform(up, rotVector.back()), XMConvertToRadians(120));
 			break;
 		case 'R':
-			currentRotation *= XMMatrixRotationAxis(XMVector3Transform(up, rotVector.back()), XMConvertToRadians(-120));
+			if (!rotVector.empty())
+				currentRotation *= XMMatrixRotationAxis(XMVector3Transform(up, rotVector.back()), XMConvertToRadians(-120));
 			break;
 		}
 		temp = NULL;
@@ -228,7 +250,7 @@ void Trees::BuildTree(Tree* tree)
 	}
 }
 
-void Trees::poissonDisc(int height, int width)
+void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
 {
 	grid.clear();
 	active.clear();
@@ -254,6 +276,7 @@ void Trees::poissonDisc(int height, int width)
 		grid.push_back(pos);
 	}
 
+
 	// Find start position
 	int x = rand() % width - 1;
 	int y = rand() % height - 1;
@@ -263,21 +286,29 @@ void Trees::poissonDisc(int height, int width)
 
 	vec2f pos(x, y);
 
-	// Add starting point to the grid
-	if (i + j * cols < grid.size())
+	// Add starting point to the grid	
+	if (grid.empty())
+			grid.emplace_back();
+
+	if (i + (j * cols) < grid.size())
 	{
-		grid[i + j * cols] = pos;
+		grid[i + (j * cols)] = pos;
 		active.push_back(pos);
 	}
 	else
 	{ 
+		return;
 		pos = vec2f(0, 0);
+
 		grid[0] = pos;
+
 		active.push_back(pos);
 	}
 
+	return;
+
 	// Generate new points
-	while (active.size() > 0)
+	while (!active.empty())
 	{
 		// choose a random point in the active list
 		int index = rand() % active.size();
@@ -331,9 +362,9 @@ void Trees::poissonDisc(int height, int width)
 				{
 					// found a point
 					found = true;
-					// set the grid to the new pint that has been calulated
+					// set the grid to the new pint that has been calculated
 					grid[col + row * cols] = sample;
-					// add the new point to the acitive list
+					// add the new point to the active list
 					active.push_back(sample);
 				}
 			}

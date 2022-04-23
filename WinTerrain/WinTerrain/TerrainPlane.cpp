@@ -6,6 +6,7 @@
 #define FADE(t) ( t * t * t * ( t * ( t * 6 - 15 ) + 10 ) )
 #define LERP(t, a, b) (a + t*(b-a))
 
+// Permutations for Perlin noise
 unsigned int perm[] = { 151,160,137,91,90,15,
   131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,
   190, 6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,
@@ -246,13 +247,31 @@ unsigned long* TerrainPlane::BuildIndex()
 
 void TerrainPlane::Regenerate(float* heightMap_, ID3D11Device* device)
 {
-	//AssignHeight(heightMap_);
-
-	PerlinNoise(perlinScale/perlinOctaves, perlinOffset, perlinFrequency, perlinOctaves);
-
-	QuadraticDistance(islandSizeX, islandSizeY, islandCentre.x, islandCentre.y, islandHeight);
+	islandCentres.clear();
+	
+	// Alter height map with Perlin noise
+	PerlinNoise(perlinSettings.scale/perlinSettings.octaves, perlinSettings.octaves, perlinSettings.frequency, perlinSettings.octaves);
 
 	CreateBuffers(device, BuildMesh(), BuildIndex());
+}
+
+void TerrainPlane::CreateIsland()
+{
+	int xPos, yPos,tempSizeX,tempSizeY,tempHeight;
+
+	// Find island center
+	xPos = rand() % resolution;
+	yPos = rand() % resolution;
+
+	islandCentres.emplace_back(xPos, yPos);
+
+	// Add a random size and height to the islands
+	tempSizeX = islandSettings.size.x + rand() % 20 - 10;
+	tempSizeY = islandSettings.size.y + rand() % 20 - 10;
+	tempHeight = islandSettings.height + rand() % 20 - 10;
+
+	// Create island with given numbers
+	QuadraticDistance(tempSizeY, tempSizeY, xPos, yPos, tempHeight);
 }
 
 void TerrainPlane::SendData(ID3D11DeviceContext* deviceContext, D3D_PRIMITIVE_TOPOLOGY top)
@@ -300,28 +319,28 @@ void TerrainPlane::PerlinNoise(float scale, float offset, float frequency, int o
 	for (int j = 0; j < resolution; j++)
 	{
 		for (int i = 0; i < resolution; i++)
-		{
-			float dx = std::abs(j - (resolution / 2)), dy = std::abs(i - (resolution / 2));
-			float d = std::sqrt((dx * dx) + (dy * dy));
-
-			
+		{			
 			// X & Y Co-ords
 			float x = (j + offset) * frequency;
 			float y = (i + offset) * frequency;
 
 			// Find the initial height
 			float height = scale * PerlinNoiseCalc(x, y);
-			heightMap[(i * resolution + j)] = height;
 
 			// Give more detail with octaves
-			for (int n = 1; n < octaves; n++)
-				heightMap[(i * resolution + j)] += (scale / n) * PerlinNoiseCalc(x * n, y * n);
-			
-			if (height / scale > 0.1 * d * d)
+			for (int n = 2; n < octaves + 2; n++)
 			{
-				heightMap[(i * resolution + j)] += 5;
-			}
+				float lacunarity = std::pow(2, n);
 
+				x = (j + offset) * lacunarity;
+				y = (i + offset) * lacunarity;
+
+				float persistance = std::pow(0.5, n);
+
+				height += (persistance) * PerlinNoiseCalc(x, y);
+			}
+			
+			heightMap[(i * resolution + j)] = height;
 		}
 	}
 }
@@ -346,7 +365,6 @@ float TerrainPlane::PerlinNoiseCalc(float x, float y)
 			Gradient(perm[BA], x - 1, y)),
 		LERP(u, Gradient(perm[AB], x, y - 1),
 			Gradient(perm[BB], x - 1, y - 1)));
-
 }
 
 float TerrainPlane::Gradient(int hash, float x, float y)
@@ -361,28 +379,104 @@ float TerrainPlane::Gradient(int hash, float x, float y)
 
 void TerrainPlane::QuadraticDistance(float sizeX, float sizeY, float centerX, float centerY, float height)
 {
+	// size of the mask 
+	float max_width = sizeX * 0.5f;
+	float max_height = sizeY * 0.5f;
+
 	for (int j = 0; j < resolution; j++)
 	{
 		for (int i = 0; i < resolution; i++)
 		{
-			// i,j pos, 500 center
+			// Distance from the centre of the mask
 			float distance_x = fabs(i - centerX);
 			float distance_y = fabs(j - centerY);
-			float distance = sqrt(distance_x * distance_x + distance_y * distance_y); // circular mask
 
-			// 50 size
-			float max_width = sizeX * 0.5f;
-			float max_height = sizeY * 0.5f;
+			float distance = sqrt(distance_x * distance_x + distance_y * distance_y); // distance to the circular mask			
+
 			float deltax = distance / max_width;
 			float deltay = distance / max_height;
+
 			float gradient = deltax * deltay;
 
-			// -100 height
+			// cutoff for when to stop gradient comparison
 			if (gradient < 1 )
 				heightMap[(i * resolution + j)] += height;
 			else
 				heightMap[(i * resolution + j)] += height*(1/gradient);
-			//heightMap[(i * resolution + j)] += 1-gradient;
+		}
+	}
+}
+
+void TerrainPlane::ParticleDeposition(int particlePointX, int particlePointZ)
+{
+	std::vector<XMFLOAT2> highList;		// List to store all the point needed to be checked
+	std::vector<XMFLOAT2> lowestList;	// List to store the points that are at the lowest
+	highList.push_back(XMFLOAT2(particlePointX, particlePointZ)); // Push back the starting point of the particle
+
+	while (highList.size() != 0) // loop until all points have been checked
+	{
+		XMFLOAT2 tempPos = highList[rand() % highList.size()]; // Choose a random direction to go
+		bool lowest = true; // Set bool to know if a point is lower than current (default to true)
+		highList.clear(); // Remove the current points from the list
+
+		float currentHeight = heightMap[int(tempPos.x * resolution + tempPos.y)];
+
+		for (int i = -1; i < 2; i++)
+		{
+			for (int j = -1; j < 2;j++)
+			{
+				// In bounds check
+				if ((tempPos.x + i) < 0 || (tempPos.x + i) > resolution || (tempPos.y + j) < 0 || (tempPos.y + j) > resolution)
+					continue;
+
+				if (currentHeight > heightMap[int((tempPos.x + i) * resolution + (tempPos.y + j))])
+				{
+					highList.push_back(XMFLOAT2(tempPos.x + i, tempPos.y + j)); // Add new point to the check list
+					lowest = false; // Set lowest bool to false as this is lower than current point
+				}
+			}
+		}
+
+		//for (int x = -1; x < 2; x++) // calculates the 3 below the point
+		//{
+		//	if ((tempPos.x * resolution + tempPos.y) - resolution + x >= 0 && (tempPos.x * resolution + tempPos.y) - resolution + x <= resolution * resolution) // check that point is in range of index
+		//	{
+		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) - resolution + x)] < heightMap[int((tempPos.x * resolution + tempPos.y))]) // If the point next to the check point is lower
+		//		{
+		//			highList.push_back(XMFLOAT2(tempPos.x - 1, tempPos.y + x)); // Add new point to the check list
+		//			lowest = false; // Set lowest bool to false as this is lower than current point
+		//		}
+		//	}
+		//}
+		//
+		//for (int x = -1; x < 2; x++) // Calculates the 3 level with the point
+		//{
+		//	if ((tempPos.x * resolution + tempPos.y) + x >= 0 && (tempPos.x * resolution + tempPos.y) + x <= resolution * resolution) // check that point is in range of index
+		//	{
+		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) + x)] < heightMap[int(tempPos.x * resolution + tempPos.y)]) // If the point next to the check point is lower
+		//		{
+		//			highList.push_back(XMFLOAT2(tempPos.x, tempPos.y + x));		// Add new point to the check list
+		//			lowest = false;		// Set lowest bool to false as this is lower than current point
+		//		}
+		//	}
+		//}
+		//
+		//for (int x = -1; x < 2; x++) // calculates the 3 above the point
+		//{
+		//	if ((tempPos.x * resolution + tempPos.y) + resolution + x >= 0 && (tempPos.x * resolution + tempPos.y) + resolution + x <= resolution * resolution && x != 0) // check that point is in range of index and not the center point
+		//	{
+		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) + resolution + x)] < heightMap[int((tempPos.x * resolution + tempPos.y))]) // If the point next to the check point is lower
+		//		{
+		//			highList.push_back(XMFLOAT2(tempPos.x + 1, tempPos.y + x));		// Add new point to the check list
+		//			lowest = false;		// Set lowest bool to false as this is lower than current point
+		//		}
+		//	}
+		//}
+
+		if (lowest == true) // If the current point is the lowest add to list of the lowest points
+		{
+			heightMap[int(tempPos.x * resolution + tempPos.y)]++;
+			return;
 		}
 	}
 }
