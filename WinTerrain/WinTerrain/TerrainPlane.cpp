@@ -245,25 +245,16 @@ unsigned long* TerrainPlane::BuildIndex()
 	return indices;
 }
 
-void TerrainPlane::Regenerate(float* heightMap_, ID3D11Device* device)
-{
-	islandCentres.clear();
-	
+void TerrainPlane::Regenerate(float* heightMap_)
+{	
 	// Alter height map with Perlin noise
 	PerlinNoise(perlinSettings.scale/perlinSettings.octaves, perlinSettings.octaves, perlinSettings.frequency, perlinSettings.octaves);
 
-	CreateBuffers(device, BuildMesh(), BuildIndex());
 }
 
-void TerrainPlane::CreateIsland()
+void TerrainPlane::CreateIsland(XMFLOAT2 islandPosition)
 {
-	int xPos, yPos,tempSizeX,tempSizeY,tempHeight;
-
-	// Find island center
-	xPos = rand() % resolution;
-	yPos = rand() % resolution;
-
-	islandCentres.emplace_back(xPos, yPos);
+	int tempSizeX,tempSizeY,tempHeight;
 
 	// Add a random size and height to the islands
 	tempSizeX = islandSettings.size.x + rand() % 20 - 10;
@@ -271,7 +262,13 @@ void TerrainPlane::CreateIsland()
 	tempHeight = islandSettings.height + rand() % 20 - 10;
 
 	// Create island with given numbers
-	QuadraticDistance(tempSizeY, tempSizeY, xPos, yPos, tempHeight);
+	QuadraticDistance(tempSizeY, tempSizeY, islandPosition.x, islandPosition.y, tempHeight);
+}
+
+void TerrainPlane::BuildMap(ID3D11Device* device)
+{	
+	// Build the map to be rendered
+	CreateBuffers(device, BuildMesh(), BuildIndex());
 }
 
 void TerrainPlane::SendData(ID3D11DeviceContext* deviceContext, D3D_PRIMITIVE_TOPOLOGY top)
@@ -399,7 +396,7 @@ void TerrainPlane::QuadraticDistance(float sizeX, float sizeY, float centerX, fl
 			float gradient = deltax * deltay;
 
 			// cutoff for when to stop gradient comparison
-			if (gradient < 1 )
+			if (gradient < 1)
 				heightMap[(i * resolution + j)] += height;
 			else
 				heightMap[(i * resolution + j)] += height*(1/gradient);
@@ -436,42 +433,6 @@ void TerrainPlane::ParticleDeposition(int particlePointX, int particlePointZ)
 				}
 			}
 		}
-
-		//for (int x = -1; x < 2; x++) // calculates the 3 below the point
-		//{
-		//	if ((tempPos.x * resolution + tempPos.y) - resolution + x >= 0 && (tempPos.x * resolution + tempPos.y) - resolution + x <= resolution * resolution) // check that point is in range of index
-		//	{
-		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) - resolution + x)] < heightMap[int((tempPos.x * resolution + tempPos.y))]) // If the point next to the check point is lower
-		//		{
-		//			highList.push_back(XMFLOAT2(tempPos.x - 1, tempPos.y + x)); // Add new point to the check list
-		//			lowest = false; // Set lowest bool to false as this is lower than current point
-		//		}
-		//	}
-		//}
-		//
-		//for (int x = -1; x < 2; x++) // Calculates the 3 level with the point
-		//{
-		//	if ((tempPos.x * resolution + tempPos.y) + x >= 0 && (tempPos.x * resolution + tempPos.y) + x <= resolution * resolution) // check that point is in range of index
-		//	{
-		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) + x)] < heightMap[int(tempPos.x * resolution + tempPos.y)]) // If the point next to the check point is lower
-		//		{
-		//			highList.push_back(XMFLOAT2(tempPos.x, tempPos.y + x));		// Add new point to the check list
-		//			lowest = false;		// Set lowest bool to false as this is lower than current point
-		//		}
-		//	}
-		//}
-		//
-		//for (int x = -1; x < 2; x++) // calculates the 3 above the point
-		//{
-		//	if ((tempPos.x * resolution + tempPos.y) + resolution + x >= 0 && (tempPos.x * resolution + tempPos.y) + resolution + x <= resolution * resolution && x != 0) // check that point is in range of index and not the center point
-		//	{
-		//		if (heightMap[int((tempPos.x * resolution + tempPos.y) + resolution + x)] < heightMap[int((tempPos.x * resolution + tempPos.y))]) // If the point next to the check point is lower
-		//		{
-		//			highList.push_back(XMFLOAT2(tempPos.x + 1, tempPos.y + x));		// Add new point to the check list
-		//			lowest = false;		// Set lowest bool to false as this is lower than current point
-		//		}
-		//	}
-		//}
 
 		if (lowest == true) // If the current point is the lowest add to list of the lowest points
 		{

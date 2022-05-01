@@ -41,6 +41,8 @@ public:
 	void CreateTrees(int height, int width, float* heightMap, int resolution, XMFLOAT2 startPos);
 	void RemoveTrees();
 
+	std::vector<Tree*> GetTrees(){ return trees; };
+
 	void setIterations(int it) { iterations = it; };
 	int getIterations() { return iterations; };
 
@@ -52,6 +54,8 @@ public:
 
 	void setDensity(float in) { density = in; };
 	float getDensity() { return density; };
+
+	void Destroy();
 
 private:
 	
@@ -115,6 +119,6 @@ private:
 	
 	// Member functions
 	void BuildTree(Tree* tree);
-	void PoissonDisc(int height, int width, XMFLOAT2);
+	void PoissonDisc(int height, int width);
 };
 

@@ -22,18 +22,22 @@ public:
 
 	TerrainPlane(ID3D11Device*);
 	~TerrainPlane();
-
+		
 	void SendData(ID3D11DeviceContext*, D3D_PRIMITIVE_TOPOLOGY top = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	int GetIndexCount() { return indexCount; };
 
 	void Resize(int);
-	void Regenerate(float* heightMap, ID3D11Device* device);
 
-	public void CreateIsland();
+	// Generation functions
+	void Regenerate(float* heightMap);
+	void CreateIsland(XMFLOAT2);
+	void BuildMap(ID3D11Device* device);
 
+	// Getters
 	int Resolution() { return resolution; };
 	float* GetHeightMap() { return heightMap; };
 
+	// Settings for terrain gen
 	struct PerlinSettings
 	{
 		float scale = 8;
@@ -54,7 +58,6 @@ public:
 	void SetPerlin(PerlinSettings val) {  perlinSettings = val;};
 	void SetIsland(IslandSettings val) {  islandSettings = val;};
 
-	std::vector<XMFLOAT2> GetIslandCenter() { return islandCentres; };
 protected:
 
 	void CreateBuffers(ID3D11Device* ,VertexType* ,unsigned long* );
@@ -83,8 +86,6 @@ protected:
 	// Settings variables
 	PerlinSettings perlinSettings;
 	IslandSettings islandSettings;
-
-	std::vector<XMFLOAT2> islandCentres;
 
 	// Height
 	float* heightMap;

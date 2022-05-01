@@ -2,6 +2,9 @@
 #include "backends/imgui_impl_dx11.h"
 #include "backends/imgui_impl_win32.h"
 #include "StochasticRule.h"
+#include "Trees.h"
+#include <ctime>
+#include "System/Timer.h"
 
 void App::Init(HWND hwnd, Input* in)
 {
@@ -21,22 +24,23 @@ void App::Init(HWND hwnd, Input* in)
 	ImGui_ImplDX11_Init(renderer->getDevice(), renderer->getDeviceContext());
 
     input = in;
+    wnd = hwnd;
 
     // Load in textures to be used
     textureMgr->LoadTexture(L"grass", L"res/grass.png");
     textureMgr->LoadTexture(L"bark", L"res/bark.png");
     textureMgr->LoadTexture(L"leaves", L"res/leaves.png");
 
-    // Setup a new camera
+    // Setup a new camera	
     cam = new FPCamera(input, 1200, 675, hwnd);
     cam->setPosition(0.0f, 0.0f, -10.0f);
+	cam->setMoveSpeed(50,50);
     cam->update();
 
+	treeSettings.size.x = 20;
+	treeSettings.size.y = 20;
+
     InitLSystem();
-
-	tree = new Trees(2);
-
-	tree->init(renderer->getDevice(), renderer->getDeviceContext(), hwnd);    
 }
 
 bool App::Frame(float dt)
@@ -58,6 +62,8 @@ bool App::Frame(float dt)
     cam->update();
     cam->move(dt);
 
+	time.frame();
+
     Render();
 
     return true;
@@ -65,7 +71,6 @@ bool App::Frame(float dt)
 
 bool App::Render()
 {
-
     XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 
     // Set the background of the scene
@@ -81,7 +86,8 @@ bool App::Render()
     shader->SetShaderParams(renderer->getDeviceContext(), worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"grass"));
     shader->Render(renderer->getDeviceContext(), terrain->GetIndexCount());
 
-	tree->render(worldMatrix, viewMatrix, projectionMatrix,  textureMgr->GetTexture(L"bark"), textureMgr->GetTexture(L"leaves"));
+    for (auto tree : trees)
+	    tree->render(worldMatrix, viewMatrix, projectionMatrix, textureMgr->GetTexture(L"bark"), textureMgr->GetTexture(L"leaves"));
 
     // Render the ImGui window
 	ImGui::Render();
@@ -97,12 +103,12 @@ bool App::InitLSystem()
 	system = new LSystem("O");
 	system->SetUsedRules(true, true);
 
-	// Adding normal rules
-    std::string islands("[");
-    for (int i = 0; i < islandAmount; i++)
-        islands.append("I");
-    islands.append("]");
+    std::string islands;
 
+	// Adding normal rules
+    for (int i = 0; i < islandAmount; i++)    
+        islands.append("[I]");
+    
 	system->AddRule('O', islands);
 
     // Add stochastic rules
@@ -136,11 +142,10 @@ bool App::RegenSystem()
     // Reset system axiom
     system->Run(0, true);
 
+    std::string islands;
 	// Adding normal rules
-	std::string islands("[");
 	for (int i = 0; i < islandAmount; i++)
-		islands.append("I");
-	islands.append("]");
+		islands.append("[I]");
 
 	system->AddRule('O', islands);
 
@@ -148,125 +153,91 @@ bool App::RegenSystem()
 	StochasticRule stochRules;
 
 	stochRules.Add("IT", 50);
-	stochRules.Add("IM", 50);
+	//stochRules.Add("IM", 50);
 
 	system->AddStochRule('I', stochRules.GetRules());
 
     return true;
 }
 
-void App::DrawGUI()
+void App::GenerateTerrain()
+{	
+	time.getTime();
+	
+	RegenSystem();
+	system->Run(2, true);
+
+	std::vector<XMFLOAT2> PositionList;
+	XMFLOAT2 CurrentPos(0, 0);
+
+	for (auto tree : trees)
+		tree->Destroy();
+
+	trees.clear();
+
+	terrain->Regenerate(nullptr);
+
+	for (auto c : system->GetCurrentSystem())
+	{
+		switch (c)
+		{
+		case 'I':
+			terrain->CreateIsland(CurrentPos);
+			break;
+		case '[':
+			PositionList.emplace_back(XMFLOAT2(rand() % terrain->Resolution(), rand() % terrain->Resolution()));
+			CurrentPos = PositionList.back();
+			break;
+		case ']':
+			// Remove current Position
+			PositionList.pop_back();
+			if (!PositionList.empty())
+				CurrentPos = PositionList.back();
+			else
+				CurrentPos = XMFLOAT2(0, 0);
+			break;
+		case 'T':
+			AddTree(CurrentPos);
+			break;
+		case 'M':
+			break;
+		default:
+			break;
+		}
+	}
+
+	for (auto forest : trees)
+		for (auto tree : forest->GetTrees())
+			tree->setHeight(terrain->GetHeightMap()[int(tree->getPostitonZ() + (tree->getPostitonX() * terrain->Resolution()))]);
+
+	terrain->BuildMap(renderer->getDevice());
+}
+
+void App::AddTree(XMFLOAT2 CurrentPos)
 {
-    // Draw a new tab to show L-system variables
-    ImGui::Begin("L-system");
-    
-        ImGui::Text("L-System Axiom: %s", system->GetAxiom().c_str());
-        ImGui::Text("L-System Current: %s", system->GetCurrentSystem().c_str());
+	// Create new group of trees
+	Trees * tree;
+	tree = new Trees(2);
 
-        if (ImGui::Button("Iterate L-System"))
-            system->Iterate();
+	tree->init(renderer->getDevice(), renderer->getDeviceContext(), wnd);
+	
+	// Random offset for position
+	float x = std::abs(islandSettings.size.x / 4 - (treeSettings.size.x + treeSettings.size.y));
+	float y = std::abs(islandSettings.size.x / 4 - (treeSettings.size.x + treeSettings.size.y));
 
-        ImGui::SliderInt("Run Amount", &runAmount, 0, 100);
-        ImGui::Checkbox("Reset System on run", &reset);
+	float offsetPosx = CurrentPos.x + ((rand() % 2*x) - x);
+	float offsetPosy = CurrentPos.y + ((rand() % 2*y) - y);
 
-        if (ImGui::Button("Run for x L-System"))
-            system->Run(runAmount, reset);
-        
-        if (ImGui::Button("Regen L-System"))
-            RegenSystem();
+	// Set values for trees and create them
+	tree->setDensity(treeSettings.density);
+	tree->CreateTrees(treeSettings.size.x + (rand() % 6) - 3, treeSettings.size.y + (rand() % 6) - 3, terrain->GetHeightMap(), terrain->Resolution(), XMFLOAT2(offsetPosx,offsetPosy));
+	trees.push_back(tree);
+}
 
-        ImGui::NewLine();
-        ImGui::Text("Standard Rules");
-
-        for (auto const& rule : system->GetRules())		
-            ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " +std::string(rule.second.successor)).c_str());
-
-        ImGui::NewLine();
-        ImGui::Text("Stochastic Rules");
-
-        for (auto const& rule : system->GetStochRules())
-        {
-            for (auto const& successor : rule.second.successors)            
-                ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " + std::string(successor.first) + " (" + std::to_string(successor.second) + ")").c_str());            
-        }
-
-        ImGui::NewLine();
-        ImGui::Text("Context Rules");
-
-        for (auto const& rule : system->GetContextRules())		
-            ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " +std::string(rule.second.successor)).c_str());
-        
-
-    ImGui::End();
-
-    // Draw a new tab to show terrain variables
-    ImGui::Begin("Terrain");
-    
-        if (ImGui::SliderInt("Island Amount", &islandAmount, 0, 5))
-        {
-		    islandSettings.amount = islandAmount;
-		    terrain->SetIsland(islandSettings);
-        }
-
-	    if (ImGui::Button("Island Settings"))
-        { 
-            isSettingsOpen = true;
-            openSettings = Island;
-        }
-        
-        ImGui::SliderInt("Tree Amount", &treeAmount, 0, 5);
-
-	    if (ImGui::Button("Tree Settings"))
-        {
-            isSettingsOpen = true; 
-            openSettings = Tree;
-        }
-        
-        ImGui::SliderInt("Mountain Amount", &mountainAmount, 0, 5);
-
-	    if (ImGui::Button("Mountain Settings"))
-        { 
-            isSettingsOpen = true;
-            openSettings = Base;
-        }
-
-        ImGui::NewLine();
-
-        static char seed[20] = "";
-
-        ImGui::InputTextWithHint("Seed", "Input seed here", seed, sizeof(seed));
-
-        if (ImGui::Button("Regen Map"))
-        {
-            terrain->Regenerate(nullptr, renderer->getDevice());
-
-            for (auto c : system->GetCurrentSystem())
-            {
-                switch (c)
-                {
-                case 'I':
-                    terrain->CreateIsland();
-                    break;
-                case '[':
-                    break;
-                case ']':
-                    break;
-                case 'T':
-                    break;
-                case 'M':
-                    break;
-                default:
-                    break;
-                }
-            }
-
-
-            tree->setDensity(islandSettings.size.x/50);
-            if (!terrain->GetIslandCenter().empty())
-                tree->CreateTrees(islandSettings.size.x/2, islandSettings.size.x/2, terrain->GetHeightMap(), terrain->Resolution(),terrain->GetIslandCenter().front());
-        }
-
-	ImGui::End();
+void App::DrawGUI()
+{  
+	DrawLSystemGUI();
+    DrawTerrainGUI();
 
     // Draw Side Panel
     if (isSettingsOpen)
@@ -276,7 +247,7 @@ void App::DrawGUI()
         
         switch (openSettings)
         {
-        case App::Base: // Draw base window
+        case App::Base: // Draw Base Window
             ImGui::Begin("Perlin Settings");
 
             ImGui::SliderFloat("Scale", &perlinSettings.scale, 0, 500);
@@ -287,7 +258,7 @@ void App::DrawGUI()
             terrain->SetPerlin(perlinSettings);
 
             break;
-        case App::Island: // Draw island window
+        case App::Island: // Draw Island Window
             ImGui::Begin("Island settings");
             
             ImGui::SliderFloat("Size X", &islandSettings.size.x, 50, 300);
@@ -298,11 +269,24 @@ void App::DrawGUI()
             terrain->SetIsland(islandSettings);
 
             break;
-        case App::Tree: // Draw tree window
+        case App::Tree: // Draw Tree Window
             ImGui::Begin("Tree Settings");
+
+            ImGui::SliderFloat("Density", &treeSettings.density, 0.1f, 50.f);
+            ImGui::SliderFloat2("Size", &treeSettings.size.x, 10.f, 100.f);
+
+            break;
+		case App::Camera: // Draw Tree Window
+            ImGui::Begin("Camera Settings");
+
+			static XMFLOAT2 speed;
+
+			if (ImGui::SliderFloat2("Camera Speed", &speed.x, 0.0f, 100.f))
+				cam->setMoveSpeed(speed.x,speed.y);
+
             break;
         default:
-            // Start Window
+            // Start Default Window
             ImGui::Begin("Terrain Generation");
             break;
         }
@@ -313,6 +297,97 @@ void App::DrawGUI()
 
         ImGui::End();
     }
-    
+}
 
+void App::DrawLSystemGUI()
+{
+	// Draw a new tab to show L-system variables
+	ImGui::Begin("L-system");
+
+	ImGui::Text("L-System Axiom: %s", system->GetAxiom().c_str());
+	ImGui::Text("L-System Current: %s", system->GetCurrentSystem().c_str());
+
+	if (ImGui::Button("Iterate L-System"))
+		system->Iterate();
+
+	ImGui::SliderInt("Run Amount", &runAmount, 0, 100);
+	ImGui::Checkbox("Reset System on run", &reset);
+
+	if (ImGui::Button("Run for x L-System"))
+		system->Run(runAmount, reset);
+
+	if (ImGui::Button("Regen L-System"))
+		RegenSystem();
+
+	ImGui::NewLine();
+	ImGui::Text("Standard Rules");
+
+	for (auto const& rule : system->GetRules())
+		ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " + std::string(rule.second.successor)).c_str());
+
+	ImGui::NewLine();
+	ImGui::Text("Stochastic Rules");
+
+	for (auto const& rule : system->GetStochRules())	
+		for (auto const& successor : rule.second.successors)
+			ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " + std::string(successor.first) + " (" + std::to_string(successor.second) + ")").c_str());
+
+	ImGui::NewLine();
+	ImGui::Text("Context Rules");
+
+	for (auto const& rule : system->GetContextRules())
+		ImGui::Text((std::string(&rule.first, sizeof(rule.first)) + " -> " + std::string(rule.second.successor)).c_str());
+
+	ImGui::End();
+}
+
+void App::DrawTerrainGUI()
+{
+	// Draw a new tab to show terrain variables
+	ImGui::Begin("Terrain");
+
+	if (ImGui::SliderInt("Island Amount", &islandAmount, 0, 5))
+	{
+		islandSettings.amount = islandAmount;
+		terrain->SetIsland(islandSettings);
+	}
+
+	if (ImGui::Button("Island Settings"))
+	{
+		isSettingsOpen = true;
+		openSettings = Island;
+	}
+
+	ImGui::SliderInt("Tree Amount", &treeAmount, 0, 5);
+
+	if (ImGui::Button("Tree Settings"))
+	{
+		isSettingsOpen = true;
+		openSettings = Tree;
+	}
+
+	ImGui::SliderInt("Mountain Amount", &mountainAmount, 0, 5);
+
+	if (ImGui::Button("Mountain Settings"))
+	{
+		isSettingsOpen = true;
+		openSettings = Base;
+	}
+
+	if (ImGui::Button("Camera Settings"))
+	{
+		isSettingsOpen = true;
+		openSettings = OpenSetings::Camera;
+	}
+
+	ImGui::NewLine();
+
+	static char seed[20] = "";
+
+	ImGui::InputTextWithHint("Seed", "Input seed here", seed, sizeof(seed));
+
+	if (ImGui::Button("Regen Map"))
+		GenerateTerrain();
+
+	ImGui::End();
 }

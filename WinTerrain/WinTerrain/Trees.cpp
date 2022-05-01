@@ -59,8 +59,8 @@ void Trees::init(ID3D11Device* dev, ID3D11DeviceContext* deviceCon, HWND hwnd)
 	shader = new Shader(device);
 	shader->InitShader(L"color_vs.cso", L"color_ps.cso");
 
-	branchMesh = new CylinderMesh(device, deviceContext, branchRes);
-	treeLeave = new SphereMesh(device, deviceContext, leaveRes);
+	branchMesh = new CylinderMesh(device, deviceContext, 2);
+	treeLeave = new SphereMesh(device, deviceContext, 2);
 
 	//Build the LSystem
 	lSystem.SetAxiom("FA");
@@ -74,7 +74,7 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 
 	for (auto tree : trees)
 	{
-		for (auto branch : tree->branches)
+		for (auto const branch : tree->branches)
 		{
 			worldMatrix = orginalWorld;
 			float scaling = branch->dirVect.y * 0.1;
@@ -90,7 +90,7 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 			shader->Render(deviceContext, branchMesh->getIndexCount());
 		}
 
-		for (auto leave : tree->treeBalls)
+		for (auto const leave : tree->treeBalls)
 		{
 			worldMatrix = orginalWorld;
 
@@ -109,21 +109,22 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 void Trees::CreateTrees(int height, int width, float* heightMap, int resolution, XMFLOAT2 startPos)
 {
 	RemoveTrees();
-	PoissonDisc(height, width, startPos);
-
-	std::vector<float> heighting(heightMap,heightMap+ resolution * resolution);
+	PoissonDisc(height, width);
 
 	for (auto gridPoint : grid)
-	{		
+	{
 		if (gridPoint.x)
 		{
-			int x = int(gridPoint.x) + startPos.x;
-			int y = int(gridPoint.y) + startPos.y;
-			
+			int x = gridPoint.x + startPos.x;
+			int y = gridPoint.y + startPos.y;
+
+			x -= width / 2;
+			y -= height / 2;
+
 			Tree* tree = new Tree();
 
-			if (x > resolution || y > resolution)
-				return;
+			if (x > resolution || y > resolution || x < 0 || y < 0)
+				continue;
 
 			tree->setHeight(heightMap[y + (x * resolution)]);
 			tree->setPosition(x, y);
@@ -159,6 +160,38 @@ void Trees::setLeaveRes(int it)
 	treeLeave = nullptr;
 	delete treeLeave;
 	treeLeave = new SphereMesh(device, deviceContext, leaveRes);
+}
+
+void Trees::Destroy()
+{
+	if (branchMesh)
+		delete branchMesh;
+	branchMesh = nullptr;
+	
+	if (treeLeave)
+		delete treeLeave;
+	treeLeave = nullptr;
+
+	for (auto tree : trees)
+	{
+		if (tree)
+			delete tree;
+		tree = nullptr;
+	}
+
+	trees.clear();
+
+	//if (deviceContext)
+	//	delete deviceContext;
+	//deviceContext = nullptr;
+	//
+	//if (device)
+	//	delete device;
+	//device = nullptr;
+	//
+	//if (shader)
+	//	delete shader;
+	//shader = nullptr;
 }
 
 void Trees::BuildTree(Tree* tree)
@@ -250,7 +283,7 @@ void Trees::BuildTree(Tree* tree)
 	}
 }
 
-void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
+void Trees::PoissonDisc(int height, int width)
 {
 	grid.clear();
 	active.clear();
@@ -261,10 +294,8 @@ void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
 
 	float w = r / sqrt(2);
 
-	if (w > width / 2) // setting a max width it the radius is too big
-	{
-		w = width / 2;	
-	}	
+	if (w > width / 2) // setting a max width it the radius is too big	
+		w = width / 2;		
 
 	int cols = width / w;
 	int rows = height / w;
@@ -275,7 +306,6 @@ void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
 		vec2f pos(NULL, NULL);
 		grid.push_back(pos);
 	}
-
 
 	// Find start position
 	int x = rand() % width - 1;
@@ -290,6 +320,11 @@ void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
 	if (grid.empty())
 			grid.emplace_back();
 
+	//pos = vec2f(startingPos.x, startingPos.y);
+	//
+	//grid[0] = pos;
+	//active.push_back(pos);
+
 	if (i + (j * cols) < grid.size())
 	{
 		grid[i + (j * cols)] = pos;
@@ -297,15 +332,12 @@ void Trees::PoissonDisc(int height, int width, XMFLOAT2 startingPos)
 	}
 	else
 	{ 
-		return;
-		pos = vec2f(0, 0);
-
+		pos = vec2f(0,0);
+	
 		grid[0] = pos;
-
+	
 		active.push_back(pos);
 	}
-
-	return;
 
 	// Generate new points
 	while (!active.empty())

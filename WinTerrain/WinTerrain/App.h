@@ -29,8 +29,8 @@ private:
 	TextureManager* textureMgr;
 	Shader* shader;
 	FPCamera *cam;
+	HWND wnd;
 
-	TerrainPlane::IslandSettings islandSettings;
 
 	// Terrain settings
 	TerrainPlane* terrain;
@@ -47,20 +47,42 @@ private:
 	LSystem* system;
 	
 	// Local functions
+
+	// L-system Generation
 	bool InitLSystem();
 	bool RegenSystem();
-	void DrawGUI();
 
-	Trees* tree;
+	// Terrain Generation
+	void GenerateTerrain();
+
+	// Draw GUI
+	void DrawGUI();
+	void DrawLSystemGUI();
+	void DrawTerrainGUI();
+
+	void AddTree(XMFLOAT2 position);
+
+	std::vector<Trees*> trees;
+
+	struct TreeSettings
+	{
+		float density = 10;
+		XMFLOAT2 size;
+	};
+
+	TreeSettings treeSettings;
 
 	enum OpenSetings
 	{
 		Base,
 		Island,
 		Tree,
+		Camera
 	};
 
 	OpenSetings openSettings = Base;
+	TerrainPlane::IslandSettings islandSettings;
 
+	core::Timer time;
 };
 

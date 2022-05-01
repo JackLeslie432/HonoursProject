@@ -1,7 +1,7 @@
 #include "CylinderMesh.h"
 
 // Initialise buffers and lad texture.
-CylinderMesh::CylinderMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int inResolution = 20)
+CylinderMesh::CylinderMesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, int inResolution = 5)
 {
 	resolution = inResolution;
 	initBuffers(device);
