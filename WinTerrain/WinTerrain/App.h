@@ -8,7 +8,7 @@
 #include "FPCamera.h"
 #include "LSystem.h"
 #include "Trees.h"
-
+#include "BenchmarkResults.h"
 #include <string>
 
 #include "imgui_internal.h"
@@ -30,7 +30,6 @@ private:
 	Shader* shader;
 	FPCamera *cam;
 	HWND wnd;
-
 
 	// Terrain settings
 	TerrainPlane* terrain;
@@ -83,6 +82,8 @@ private:
 	OpenSetings openSettings = Base;
 	TerrainPlane::IslandSettings islandSettings;
 
-	core::Timer time;
+	BenchTimer timer;
+
+	std::unordered_map<std::string, BenchmarkResults*> results;
 };
 

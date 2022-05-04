@@ -1,6 +1,7 @@
 #include "TerrainPlane.h"
 #include <cstdlib>
 #include <cmath>
+#include <ctime>
 
 // Interpolation
 #define FADE(t) ( t * t * t * ( t * ( t * 6 - 15 ) + 10 ) )
@@ -57,6 +58,8 @@ TerrainPlane::TerrainPlane(ID3D11Device* device)
 	indexCount = ((resolution - 1) * (resolution - 1)) * 6;
 		
 	CreateBuffers(device, BuildMesh(), BuildIndex());
+
+	srand(time(NULL));
 }
 
 TerrainPlane::~TerrainPlane()
@@ -246,10 +249,9 @@ unsigned long* TerrainPlane::BuildIndex()
 }
 
 void TerrainPlane::Regenerate(float* heightMap_)
-{	
+{		
 	// Alter height map with Perlin noise
 	PerlinNoise(perlinSettings.scale/perlinSettings.octaves, perlinSettings.octaves, perlinSettings.frequency, perlinSettings.octaves);
-
 }
 
 void TerrainPlane::CreateIsland(XMFLOAT2 islandPosition)
@@ -265,10 +267,28 @@ void TerrainPlane::CreateIsland(XMFLOAT2 islandPosition)
 	QuadraticDistance(tempSizeY, tempSizeY, islandPosition.x, islandPosition.y, tempHeight);
 }
 
-void TerrainPlane::BuildMap(ID3D11Device* device)
+void TerrainPlane::BuildMap(ID3D11Device* device, ID3D11DeviceContext* deviceContext)
 {	
-	// Build the map to be rendered
-	CreateBuffers(device, BuildMesh(), BuildIndex());
+	m_vertices = BuildMesh();
+	m_indices = BuildIndex();
+
+	if (vertexBuffer == nullptr)			
+		CreateBuffers(device, m_vertices, m_indices);	// Build the map to be rendered
+	else // Update information if buffers created
+	{
+		D3D11_MAPPED_SUBRESOURCE mappedResource;
+		ZeroMemory(&mappedResource, sizeof(D3D11_MAPPED_SUBRESOURCE));
+
+		// Disable the GPU access and update
+		deviceContext->Map(vertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);		
+		memcpy(mappedResource.pData, m_vertices, sizeof(VertexType) * vertexCount);
+		deviceContext->Unmap(vertexBuffer, 0);
+	}
+	
+	delete[] m_vertices;
+	m_vertices = NULL;
+	delete[] m_indices;
+	m_indices = NULL;
 }
 
 void TerrainPlane::SendData(ID3D11DeviceContext* deviceContext, D3D_PRIMITIVE_TOPOLOGY top)

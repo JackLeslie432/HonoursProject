@@ -31,7 +31,7 @@ public:
 	// Generation functions
 	void Regenerate(float* heightMap);
 	void CreateIsland(XMFLOAT2);
-	void BuildMap(ID3D11Device* device);
+	void BuildMap(ID3D11Device* device, ID3D11DeviceContext* deviceContext);
 
 	// Getters
 	int Resolution() { return resolution; };
@@ -89,5 +89,9 @@ protected:
 
 	// Height
 	float* heightMap;
+
+	// Pointers
+	VertexType* m_vertices;
+	unsigned long* m_indices;
 };
 

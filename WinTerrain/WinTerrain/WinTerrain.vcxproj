@@ -155,6 +155,8 @@
     <ClCompile Include="..\extern\imGui\imgui-docking\imgui_tables.cpp" />
     <ClCompile Include="..\extern\imGui\imgui-docking\imgui_widgets.cpp" />
     <ClCompile Include="BaseMesh.cpp" />
+    <ClCompile Include="BenchmarkResults.cpp" />
+    <ClCompile Include="BenchTimer.cpp" />
     <ClCompile Include="CylinderMesh.cpp" />
     <ClCompile Include="LSystem.cpp" />
     <ClCompile Include="App.cpp" />
@@ -166,14 +168,16 @@
     <ClCompile Include="System\Main.cpp" />
     <ClCompile Include="System\Renderer.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="System\Timer.cpp" />
     <ClCompile Include="TerrainPlane.cpp" />
     <ClCompile Include="TextureManager.cpp" />
-    <ClCompile Include="System\Timer.cpp" />
     <ClCompile Include="System\Window.cpp" />
     <ClCompile Include="Trees.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BaseMesh.h" />
+    <ClInclude Include="BenchmarkResults.h" />
+    <ClInclude Include="BenchTimer.h" />
     <ClInclude Include="CylinderMesh.h" />
     <ClInclude Include="LSystem.h" />
     <ClInclude Include="App.h" />
@@ -184,9 +188,9 @@
     <ClInclude Include="System\Input.h" />
     <ClInclude Include="System\Renderer.h" />
     <ClInclude Include="Shader.h" />
+    <ClInclude Include="System\Timer.h" />
     <ClInclude Include="TerrainPlane.h" />
     <ClInclude Include="TextureManager.h" />
-    <ClInclude Include="System\Timer.h" />
     <ClInclude Include="System\Window.h" />
     <ClInclude Include="Trees.h" />
   </ItemGroup>

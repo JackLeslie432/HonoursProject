@@ -26,6 +26,20 @@ void Shader::InitShader(const wchar_t* vsFilename, const wchar_t* psFilename)
     matrixBufferDesc.MiscFlags = 0;
     matrixBufferDesc.StructureByteStride = 0;
 
+    D3D11_SAMPLER_DESC samplerDesc;
+
+	// Create a texture sampler state description.
+	samplerDesc.Filter = D3D11_FILTER_ANISOTROPIC;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.MipLODBias = 0.0f;
+	samplerDesc.MaxAnisotropy = 1;
+	samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+	samplerDesc.MinLOD = 0;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    pRenderer->CreateSamplerState(&samplerDesc, &sampleState);
+
 	// Setup light buffer
 	D3D11_BUFFER_DESC lightBufferDesc;
 

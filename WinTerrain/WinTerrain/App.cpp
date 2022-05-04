@@ -2,9 +2,6 @@
 #include "backends/imgui_impl_dx11.h"
 #include "backends/imgui_impl_win32.h"
 #include "StochasticRule.h"
-#include "Trees.h"
-#include <ctime>
-#include "System/Timer.h"
 
 void App::Init(HWND hwnd, Input* in)
 {
@@ -37,17 +34,26 @@ void App::Init(HWND hwnd, Input* in)
 	cam->setMoveSpeed(50,50);
     cam->update();
 
+	// Setup for some settings
 	treeSettings.size.x = 20;
 	treeSettings.size.y = 20;
 
     InitLSystem();
+
+	//terrain->Resize(500);
+	// Add Benchmark classes
+	results["Perlin"] = new BenchmarkResults(10, terrain->Resolution(), "Perlin");
+	results["Island"] = new BenchmarkResults(10, terrain->Resolution(), "Island");
+	results["Tree"] = new BenchmarkResults(10, terrain->Resolution(), "Tree");
+	results["Lsys"] = new BenchmarkResults(10, terrain->Resolution(), "Lsys");
+	results["Overall"] = new BenchmarkResults(10, terrain->Resolution(), "Overall");
+
 }
 
 bool App::Frame(float dt)
 {
 	if (input->isKeyDown(27))	
 		return false;
-	
 
     // Initialize ImGui window
 	ImGui_ImplDX11_NewFrame();
@@ -55,14 +61,11 @@ bool App::Frame(float dt)
 	ImGui::NewFrame();
 
     // Start a new tab for terrain
-
     DrawGUI();
     
     // Update the camera
     cam->update();
     cam->move(dt);
-
-	time.frame();
 
     Render();
 
@@ -94,6 +97,7 @@ bool App::Render()
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     
     renderer->endScene();
+
     return false;
 }
 
@@ -162,27 +166,32 @@ bool App::RegenSystem()
 
 void App::GenerateTerrain()
 {	
-	time.getTime();
-	
+	results["Lsys"]->StartTime();
 	RegenSystem();
 	system->Run(2, true);
+	results["Lsys"]->NextIteration();
 
+	
 	std::vector<XMFLOAT2> PositionList;
 	XMFLOAT2 CurrentPos(0, 0);
-
+	
 	for (auto tree : trees)
 		tree->Destroy();
-
+	
 	trees.clear();
 
+	results["Perlin"]->StartTime();
 	terrain->Regenerate(nullptr);
+	results["Perlin"]->NextIteration();
 
 	for (auto c : system->GetCurrentSystem())
 	{
 		switch (c)
 		{
 		case 'I':
+			results["Island"]->StartTime();
 			terrain->CreateIsland(CurrentPos);
+			results["Island"]->NextIteration();
 			break;
 		case '[':
 			PositionList.emplace_back(XMFLOAT2(rand() % terrain->Resolution(), rand() % terrain->Resolution()));
@@ -197,7 +206,9 @@ void App::GenerateTerrain()
 				CurrentPos = XMFLOAT2(0, 0);
 			break;
 		case 'T':
+			results["Tree"]->StartTime();
 			AddTree(CurrentPos);
+			results["Tree"]->NextIteration();
 			break;
 		case 'M':
 			break;
@@ -205,12 +216,12 @@ void App::GenerateTerrain()
 			break;
 		}
 	}
-
+	
 	for (auto forest : trees)
 		for (auto tree : forest->GetTrees())
 			tree->setHeight(terrain->GetHeightMap()[int(tree->getPostitonZ() + (tree->getPostitonX() * terrain->Resolution()))]);
 
-	terrain->BuildMap(renderer->getDevice());
+	terrain->BuildMap(renderer->getDevice(), renderer->getDeviceContext());
 }
 
 void App::AddTree(XMFLOAT2 CurrentPos)
@@ -320,6 +331,7 @@ void App::DrawLSystemGUI()
 		RegenSystem();
 
 	ImGui::NewLine();
+
 	ImGui::Text("Standard Rules");
 
 	for (auto const& rule : system->GetRules())
@@ -388,6 +400,29 @@ void App::DrawTerrainGUI()
 
 	if (ImGui::Button("Regen Map"))
 		GenerateTerrain();
+
+	if (ImGui::Button("Benchmark Generation"))
+	{
+		results["Overall"]->StartTime();
+
+		for (int i = 0; i < results["Overall"]->IterationAmount(); i++)
+		{
+			GenerateTerrain();
+			results["Overall"]->NextIteration();
+		}
+
+		for (auto result: results)		
+			result.second->WriteToFile();
+		
+	}
+
+	if (ImGui::Button("Start Timer"))
+		timer.Start();
+	
+	if (ImGui::Button("End Timer"))
+		timer.End();
+
+	ImGui::Text("Time Elapsed %f", timer.GetTime());
 
 	ImGui::End();
 }
