@@ -91,7 +91,7 @@ private:
 			x *= in;
 			y *= in;
 			return *this;
-		}
+		}		
 	};
 
 	// init grid and active list for Poisson disc

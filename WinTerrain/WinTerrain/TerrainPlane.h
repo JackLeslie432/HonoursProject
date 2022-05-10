@@ -51,7 +51,7 @@ public:
 		XMFLOAT2 centre;
 		XMFLOAT2 size = XMFLOAT2(100,100);
 
-		float height = 50;
+		float height = 10;
 		int amount = 0;
 	};
 
@@ -64,8 +64,6 @@ protected:
 
 	VertexType* BuildMesh();
 	unsigned long* BuildIndex();
-
-	void AssignHeight(float* height);
 
 	// Perlin functions
 	void PerlinNoise(float scale, float offset, float frequency, int octaves);

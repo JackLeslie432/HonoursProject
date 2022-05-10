@@ -37,9 +37,7 @@ int Window::StartWindow(int screenWidth, int screenHeight)
 
 	// NUll check window
 	if (hwnd == NULL)
-	{
-		return 0;
-	}
+		return 0;	
 
 	ShowWindow(hwnd, SW_SHOW);
 

@@ -38,10 +38,10 @@ Trees::~Trees()
 		{
 			if (branch)
 			{
-				branch = nullptr;
 				delete branch;
+				branch = nullptr;
 			}
-		}
+		}		
 
 		if (tree)
 		{
@@ -70,6 +70,11 @@ void Trees::init(ID3D11Device* dev, ID3D11DeviceContext* deviceCon, HWND hwnd)
 
 void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectionMatrix, ID3D11ShaderResourceView* branchTex, ID3D11ShaderResourceView* leaveTex)
 {
+	if (!deviceContext)
+		return;
+
+	worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixScaling(0.5f, 0.5f, 0.5f));
+
 	XMMATRIX orginalWorld = worldMatrix;
 
 	for (auto tree : trees)
@@ -77,12 +82,12 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 		for (auto const branch : tree->branches)
 		{
 			worldMatrix = orginalWorld;
-			float scaling = branch->dirVect.y * 0.1;
+			float scaling = branch->dirVect.y * 0.05;
+			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(branch->posVect.x, branch->posVect.y, branch->posVect.z));
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixScaling(scaling, scaling, scaling));
 			
 			//if (branch->rotMatrix != NULL)
 				//worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, branch->rotMatrix);
-			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(branch->posVect.x, branch->posVect.y, branch->posVect.z));
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(tree->x, tree->y,tree->z ));
 
 			shader->SetShaderParams(deviceContext, worldMatrix, viewMatrix, projectionMatrix, branchTex); // Add shader for trees
@@ -95,8 +100,8 @@ void Trees::render(XMMATRIX worldMatrix, XMMATRIX viewMatrix, XMMATRIX projectio
 			worldMatrix = orginalWorld;
 
 			float scaling = 0.3;
-			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixScaling(scaling, scaling, scaling));
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(leave.x, leave.y, leave.z));
+			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixScaling(scaling, scaling, scaling));
 			worldMatrix = DirectX::XMMatrixMultiply(worldMatrix, DirectX::XMMatrixTranslation(tree->x, tree->y, tree->z));
 
 			shader->SetShaderParams(deviceContext, worldMatrix, viewMatrix, projectionMatrix, leaveTex);
@@ -111,6 +116,8 @@ void Trees::CreateTrees(int height, int width, float* heightMap, int resolution,
 	RemoveTrees();
 	PoissonDisc(height, width);
 
+	float increment = 100.f / resolution;
+
 	for (auto gridPoint : grid)
 	{
 		if (gridPoint.x)
@@ -121,12 +128,16 @@ void Trees::CreateTrees(int height, int width, float* heightMap, int resolution,
 			x -= width / 2;
 			y -= height / 2;
 
-			Tree* tree = new Tree();
-
 			if (x > resolution || y > resolution || x < 0 || y < 0)
 				continue;
 
+			Tree* tree = new Tree();		
+
 			tree->setHeight(heightMap[y + (x * resolution)]);
+
+			x *= increment;
+			y *= increment;
+
 			tree->setPosition(x, y);
 			
 			BuildTree(tree);
@@ -140,30 +151,45 @@ void Trees::RemoveTrees()
 {
 	for (auto tree : trees)
 	{
-		tree->branches.clear();
-		tree->treeBalls.clear();
+		for (auto branch : tree->branches)
+		{
+			if (branch)
+			{
+				delete branch;
+				branch = nullptr;
+			}
+		}
+
+		if (tree)
+		{
+			delete tree;
+			tree = nullptr;
+		}
 	}
+
 	trees.clear();
 }
 
 void Trees::setBranchRes(int it)
 {
 	 branchRes = it;
-	 branchMesh = nullptr;
 	 delete branchMesh;
+	 branchMesh = nullptr;
 	 branchMesh = new CylinderMesh(device, deviceContext, branchRes);
 }
 
 void Trees::setLeaveRes(int it)
 {
 	leaveRes = it;
-	treeLeave = nullptr;
 	delete treeLeave;
+	treeLeave = nullptr;
 	treeLeave = new SphereMesh(device, deviceContext, leaveRes);
 }
 
 void Trees::Destroy()
 {
+	RemoveTrees();
+
 	if (branchMesh)
 		delete branchMesh;
 	branchMesh = nullptr;
@@ -278,8 +304,9 @@ void Trees::BuildTree(Tree* tree)
 				currentRotation *= XMMatrixRotationAxis(XMVector3Transform(up, rotVector.back()), XMConvertToRadians(-120));
 			break;
 		}
-		temp = NULL;
+
 		delete temp;
+		temp = NULL;
 	}
 }
 
@@ -320,11 +347,6 @@ void Trees::PoissonDisc(int height, int width)
 	if (grid.empty())
 			grid.emplace_back();
 
-	//pos = vec2f(startingPos.x, startingPos.y);
-	//
-	//grid[0] = pos;
-	//active.push_back(pos);
-
 	if (i + (j * cols) < grid.size())
 	{
 		grid[i + (j * cols)] = pos;
@@ -332,10 +354,8 @@ void Trees::PoissonDisc(int height, int width)
 	}
 	else
 	{ 
-		pos = vec2f(0,0);
-	
-		grid[0] = pos;
-	
+		pos = vec2f(0,0);	
+		grid[0] = pos;	
 		active.push_back(pos);
 	}
 
@@ -381,10 +401,8 @@ void Trees::PoissonDisc(int height, int width)
 							// Find the distance to the new point
 							float d = sqrt(((sample.x - neighbor.x) * (sample.x - neighbor.x)) + ((sample.y - neighbor.y) * (sample.y - neighbor.y)));
 							// if the distance is smaller than the radius then throw it away
-							if (d < r)
-							{
-								ok = false;
-							}
+							if (d < r)							
+								ok = false;							
 						}
 					}
 				}
@@ -394,7 +412,7 @@ void Trees::PoissonDisc(int height, int width)
 				{
 					// found a point
 					found = true;
-					// set the grid to the new pint that has been calculated
+					// set the grid to the new point that has been calculated
 					grid[col + row * cols] = sample;
 					// add the new point to the active list
 					active.push_back(sample);
@@ -402,9 +420,7 @@ void Trees::PoissonDisc(int height, int width)
 			}
 		}
 
-		if (!found)
-		{
-			active.erase(active.begin() + index);
-		}
+		if (!found)		
+			active.erase(active.begin() + index);		
 	}
 }

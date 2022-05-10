@@ -51,7 +51,6 @@ TerrainPlane::TerrainPlane(ID3D11Device* device)
 
 	// Set set and generate heights for terrain
 	Resize(resolution);
-	AssignHeight(nullptr);
 
 	// Assign correct vertex and index count
 	vertexCount = resolution * resolution;
@@ -121,17 +120,20 @@ TerrainPlane::VertexType* TerrainPlane::BuildMesh()
 
 	u = 0;
 	v = 0;
-	increment = 10 / resolution;
+	increment = 100.f / resolution;
 	
 	//Set up vertices
 	for (int j = 0; j < (resolution); j++) {
 		for (int i = 0; i < (resolution); i++) {
-			positionX = (float)j * scale;
-			positionZ = (float)(i)*scale;
+			positionX = float(j) * increment * scale;
+			positionZ = float(i) * increment * scale;
+
+			//positionX = float(j)* scale;
+			//positionZ = float(i)* scale;
 
 			height = heightMap[index];
 			vertices[index].position = DirectX::XMFLOAT3(positionX, height, positionZ);
-			vertices[index].texture = DirectX::XMFLOAT2(u, v);			
+			vertices[index].texture = DirectX::XMFLOAT2(u, v);
 
 			u += increment;
 			index++;
@@ -259,9 +261,9 @@ void TerrainPlane::CreateIsland(XMFLOAT2 islandPosition)
 	int tempSizeX,tempSizeY,tempHeight;
 
 	// Add a random size and height to the islands
-	tempSizeX = islandSettings.size.x + rand() % 20 - 10;
-	tempSizeY = islandSettings.size.y + rand() % 20 - 10;
-	tempHeight = islandSettings.height + rand() % 20 - 10;
+	tempSizeX = islandSettings.size.x + rand() % (int)islandSettings.size.x / 2 - (int)islandSettings.size.x / 4;
+	tempSizeY = islandSettings.size.y + rand() % (int)islandSettings.size.y/2 - (int)islandSettings.size.y/4;
+	tempHeight = islandSettings.height + rand() % (int)islandSettings.height / 2 - (int)islandSettings.height / 4;
 
 	// Create island with given numbers
 	QuadraticDistance(tempSizeY, tempSizeY, islandPosition.x, islandPosition.y, tempHeight);
@@ -311,23 +313,18 @@ void TerrainPlane::Resize(int inResolution)
 	// Change the amount of vertexes in terrain
 	resolution = inResolution;
 	heightMap = new float[resolution * resolution];
-	if (vertexBuffer != NULL) {
-		vertexBuffer->Release();
-	}
-	vertexBuffer = NULL;
-}
 
-void TerrainPlane::AssignHeight(float* _heightMap)
-{
-	// Gives a random number from 1 to 20 for each place in the height map
-	for (int j = 0; j < (resolution); j++) {
-		for (int i = 0; i < (resolution); i++) {
-			if (_heightMap)
-				heightMap[(j * resolution) + i] = _heightMap[(j * resolution) + i];
-			else
-				heightMap[(j * resolution) + i] = 0;
-		}
-	}
+	// Assign correct vertex and index count
+	vertexCount = resolution * resolution;
+	indexCount = ((resolution - 1) * (resolution - 1)) * 6;
+
+	if (vertexBuffer != NULL) 
+		vertexBuffer->Release();
+	vertexBuffer = NULL;
+
+	if (indexBuffer != NULL) 
+		indexBuffer->Release();	
+	indexBuffer = NULL;
 }
 
 void TerrainPlane::PerlinNoise(float scale, float offset, float frequency, int octaves)

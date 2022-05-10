@@ -66,7 +66,7 @@ private:
 	struct TreeSettings
 	{
 		float density = 10;
-		XMFLOAT2 size;
+		XMFLOAT2 size = XMFLOAT2(20,20);
 	};
 
 	TreeSettings treeSettings;

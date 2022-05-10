@@ -15,9 +15,10 @@ public:
 
 	void StartTime();
 	void StopTime();
+	void ClearTimes();
 	void NextIteration();
 
-	void WriteToFile();
+	void WriteToFile(int);
 
 private:
 

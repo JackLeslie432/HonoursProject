@@ -10,6 +10,7 @@ void App::Init(HWND hwnd, Input* in)
     textureMgr = new TextureManager(renderer->getDevice(),renderer->getDeviceContext());
     terrain = new TerrainPlane(renderer->getDevice());
 
+	// Init a shader
     shader = new Shader(renderer->getDevice());
     shader->InitShader(L"color_vs.cso",L"color_ps.cso");
 
@@ -31,22 +32,17 @@ void App::Init(HWND hwnd, Input* in)
     // Setup a new camera	
     cam = new FPCamera(input, 1200, 675, hwnd);
     cam->setPosition(0.0f, 0.0f, -10.0f);
-	cam->setMoveSpeed(50,50);
+	cam->setMoveSpeed(20,20);
     cam->update();
-
-	// Setup for some settings
-	treeSettings.size.x = 20;
-	treeSettings.size.y = 20;
 
     InitLSystem();
 
-	//terrain->Resize(500);
 	// Add Benchmark classes
-	results["Perlin"] = new BenchmarkResults(10, terrain->Resolution(), "Perlin");
-	results["Island"] = new BenchmarkResults(10, terrain->Resolution(), "Island");
-	results["Tree"] = new BenchmarkResults(10, terrain->Resolution(), "Tree");
-	results["Lsys"] = new BenchmarkResults(10, terrain->Resolution(), "Lsys");
-	results["Overall"] = new BenchmarkResults(10, terrain->Resolution(), "Overall");
+	results["Perlin"] = new BenchmarkResults(100, terrain->Resolution(), "Perlin");
+	results["Island"] = new BenchmarkResults(100, terrain->Resolution(), "Island");
+	results["Tree"] = new BenchmarkResults(100, terrain->Resolution(), "Tree");
+	results["Lsys"] = new BenchmarkResults(100, terrain->Resolution(), "Lsys");
+	results["Overall"] = new BenchmarkResults(100, terrain->Resolution(), "Overall");
 
 }
 
@@ -170,7 +166,6 @@ void App::GenerateTerrain()
 	RegenSystem();
 	system->Run(2, true);
 	results["Lsys"]->NextIteration();
-
 	
 	std::vector<XMFLOAT2> PositionList;
 	XMFLOAT2 CurrentPos(0, 0);
@@ -216,10 +211,12 @@ void App::GenerateTerrain()
 			break;
 		}
 	}
-	
+
+	float increment = 100.f / terrain->Resolution();
+
 	for (auto forest : trees)
 		for (auto tree : forest->GetTrees())
-			tree->setHeight(terrain->GetHeightMap()[int(tree->getPostitonZ() + (tree->getPostitonX() * terrain->Resolution()))]);
+			tree->setHeight(terrain->GetHeightMap()[int(tree->getPostitonZ()/ increment + (tree->getPostitonX()/ increment * terrain->Resolution()))]);
 
 	terrain->BuildMap(renderer->getDevice(), renderer->getDeviceContext());
 }
@@ -330,6 +327,31 @@ void App::DrawLSystemGUI()
 	if (ImGui::Button("Regen L-System"))
 		RegenSystem();
 
+	if (ImGui::Button("Bench L-System"))
+	{
+		results["Lsys"]->ClearTimes();
+
+		for (int k = 1; k < 11; k++)
+		{
+			for (int j = 0; j < 100; j++)
+			{
+				results["Lsys"]->StartTime();
+
+				for (int i = 0; i < 1000; i++)
+				{
+					RegenSystem();
+					system->Run(k*10, true);
+				}
+
+				results["Lsys"]->NextIteration();
+			}
+
+			results["Lsys"]->WriteToFile(k*10);
+		}
+
+		int x = 0;
+	}
+
 	ImGui::NewLine();
 
 	ImGui::Text("Standard Rules");
@@ -370,7 +392,7 @@ void App::DrawTerrainGUI()
 		openSettings = Island;
 	}
 
-	ImGui::SliderInt("Tree Amount", &treeAmount, 0, 5);
+	//ImGui::SliderInt("Tree Amount", &treeAmount, 0, 5);
 
 	if (ImGui::Button("Tree Settings"))
 	{
@@ -378,7 +400,7 @@ void App::DrawTerrainGUI()
 		openSettings = Tree;
 	}
 
-	ImGui::SliderInt("Mountain Amount", &mountainAmount, 0, 5);
+	//ImGui::SliderInt("Mountain Amount", &mountainAmount, 0, 5);
 
 	if (ImGui::Button("Mountain Settings"))
 	{
@@ -394,35 +416,58 @@ void App::DrawTerrainGUI()
 
 	ImGui::NewLine();
 
-	static char seed[20] = "";
-
-	ImGui::InputTextWithHint("Seed", "Input seed here", seed, sizeof(seed));
+	//static char seed[20] = "";
+	//
+	//ImGui::InputTextWithHint("Seed", "Input seed here", seed, sizeof(seed));
 
 	if (ImGui::Button("Regen Map"))
 		GenerateTerrain();
 
 	if (ImGui::Button("Benchmark Generation"))
 	{
-		results["Overall"]->StartTime();
-
-		for (int i = 0; i < results["Overall"]->IterationAmount(); i++)
+		for (int i = 1; i < 8+1; i++)
 		{
-			GenerateTerrain();
-			results["Overall"]->NextIteration();
-		}
+			terrain->Resize(i * 250);
 
-		for (auto result: results)		
-			result.second->WriteToFile();
-		
+			results["Overall"]->StartTime();
+
+			for (int i = 0; i < results["Overall"]->IterationAmount(); i++)
+			{
+				GenerateTerrain();
+				results["Overall"]->NextIteration();
+			}
+
+			for (auto result : results)
+			{
+				result.second->WriteToFile(terrain->Resolution());
+				result.second->ClearTimes();
+			}
+		}		
 	}
 
-	if (ImGui::Button("Start Timer"))
-		timer.Start();
-	
-	if (ImGui::Button("End Timer"))
-		timer.End();
+	if (ImGui::Button("Benchmark Trees"))
+	{
+		for (int i = 1; i < 11; i++)
+		{
+			for (int j = 0; j < 100; j++)
+			{
+				results["Tree"]->StartTime();
 
-	ImGui::Text("Time Elapsed %f", timer.GetTime());
+				treeSettings.size = XMFLOAT2(i * 10, i * 10);
+
+				for (int k = 0; k < 10 ;k++)
+					AddTree(XMFLOAT2(150, 150));
+								
+				trees.clear();
+
+				results["Tree"]->NextIteration();
+			}
+
+			results["Tree"]->WriteToFile(i * 10);
+			results["Tree"]->ClearTimes();
+		}
+		
+	}
 
 	ImGui::End();
 }
